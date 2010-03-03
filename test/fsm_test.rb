@@ -111,7 +111,6 @@ class FSMTest < Test::Unit::TestCase
   def test_intermediate_callback_with_redirect_proc
     callback_class = Class.new do
       attr_accessor :result
-      alias call send
       def csi(f)
         f.redirect = lambda {|m| m.input =~ /[\d;]/}
       end
@@ -125,7 +124,7 @@ class FSMTest < Test::Unit::TestCase
       end
     end
     cb = callback_class.new
-    fsm = ScripTTY::Util::FSM.new(:callback => cb, :definition => <<-EOF)
+    fsm = ScripTTY::Util::FSM.new(:callback => cb, :callback_method => :send, :definition => <<-EOF)
       '\e' => {
         '[' => csi => {
           'm' => sgr
@@ -141,7 +140,6 @@ class FSMTest < Test::Unit::TestCase
   def test_intermediate_callback_with_redirect_symbol
     callback_class = Class.new do
       attr_accessor :result
-      alias call send
       def csi(f)
         f.redirect = :csi_redirect
       end
@@ -158,7 +156,7 @@ class FSMTest < Test::Unit::TestCase
       end
     end
     cb = callback_class.new
-    fsm = ScripTTY::Util::FSM.new(:callback => cb, :definition => <<-EOF)
+    fsm = ScripTTY::Util::FSM.new(:callback => cb, :callback_method => :send, :definition => <<-EOF)
       '\e' => {
         '[' => csi => {
           'm' => sgr
@@ -193,7 +191,6 @@ class FSMTest < Test::Unit::TestCase
   def test_reset_during_callback
     callback_class = Class.new do
       attr_accessor :result
-      alias call send
       def redirect_true(f)
         @result ||= [] ; @result << :redirect_true
         f.reset!
@@ -209,7 +206,7 @@ class FSMTest < Test::Unit::TestCase
       end
     end
     cb = callback_class.new
-    fsm = ScripTTY::Util::FSM.new(:callback => cb, :definition => <<-EOF)
+    fsm = ScripTTY::Util::FSM.new(:callback => cb, :callback_method => :send, :definition => <<-EOF)
       'x' => x
     EOF
     assert_equal 1, fsm.next_state

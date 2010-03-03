@@ -46,13 +46,13 @@ module ScripTTY
 
       # Object that will receive named events.
       #
-      # This can be a Proc object, or any object that responds to the 'call'
-      # method.
-      #
-      # When processing reaches a named event, the FSM will invoke the 'call'
-      # method on this object, passing it the name of the event and the FSM
-      # object.
+      # When processing reaches a named event, the FSM will invoke the method
+      # specified by the callback_method attribute (by default, "call"),
+      # passing it the name of the event and the FSM object.
       attr_accessor :callback
+
+      # The name of the method to invoke on the callback object. (default: :call)
+      attr_accessor :callback_method
 
       # When not nil, all inputs are redirected, bypassing normal processing
       # (but input_sequence is still updated).
@@ -79,10 +79,13 @@ module ScripTTY
       #   See the documentation for the callback attribute.
       #   A block may be given to the new method instead of being passed as an
       #   option.
+      # [:callback_method]
+      #   See the documentation for the callback_method attribute.
       def initialize(options={}, &block)
         @redirect = nil
         @input_sequence = []
         @callback = options[:callback] || block
+        @callback_method = (options[:callback_method] || :call).to_sym
         load_definition(options[:definition])
         reset!
       end
@@ -134,7 +137,7 @@ module ScripTTY
         # Set next_state and invoke the callback, if any is specified for this state transition.
         @next_state = t[:next_state]
         if @callback and t[:event]
-          @callback.call(t[:event], self)
+          @callback.__send__(@callback_method, t[:event], self)
         end
 
         # Return true
