@@ -41,9 +41,9 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
 
   def test_flat_fsm
     expected = [
-      {:state => 1, :input => "a", :next_state => 1, :callback => "literal_a"},
-      {:state => 1, :input => "b", :next_state => 1, :callback => "literal_b"},
-      {:state => 1, :input => :other, :next_state => 1, :callback => "other"},
+      {:state => 1, :input => "a", :next_state => 1, :event_name => "literal_a"},
+      {:state => 1, :input => "b", :next_state => 1, :event_name => "literal_b"},
+      {:state => 1, :input => :other, :next_state => 1, :event_name => "other"},
     ]
     definition = <<-EOF
       'a' => literal_a
@@ -55,13 +55,13 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
 
   def test_nested_rules
     expected = [
-      {:state => 1, :input => "a", :next_state => 2, :callback => nil},
-      {:state => 2, :input => "b", :next_state => 1, :callback => "handle_a_b"},
-      {:state => 2, :input => "c", :next_state => 1, :callback => "handle_a_c"},
-      {:state => 2, :input => :other, :next_state => 1, :callback => "handle_a_other"},
-      {:state => 1, :input => "b", :next_state => 1, :callback => "handle_b"},
-      {:state => 1, :input => "c", :next_state => 3, :callback => nil},
-      {:state => 3, :input => "a", :next_state => 1, :callback => "handle_c_a"},
+      {:state => 1, :input => "a", :next_state => 2, :event_name => nil},
+      {:state => 2, :input => "b", :next_state => 1, :event_name => "handle_a_b"},
+      {:state => 2, :input => "c", :next_state => 1, :event_name => "handle_a_c"},
+      {:state => 2, :input => :other, :next_state => 1, :event_name => "handle_a_other"},
+      {:state => 1, :input => "b", :next_state => 1, :event_name => "handle_b"},
+      {:state => 1, :input => "c", :next_state => 3, :event_name => nil},
+      {:state => 3, :input => "a", :next_state => 1, :event_name => "handle_c_a"},
     ]
     definition = <<-EOF
       'a' => {
@@ -79,8 +79,8 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
 
   def test_nested_rule_with_comments
     expected = [
-      {:state => 1, :input => "a", :next_state => 2, :callback => nil},
-      {:state => 2, :input => "b", :next_state => 1, :callback => "ab"},
+      {:state => 1, :input => "a", :next_state => 2, :event_name => nil},
+      {:state => 2, :input => "b", :next_state => 1, :event_name => "ab"},
     ]
     definition = <<-EOF
       'a' => {      # comment 1
@@ -90,10 +90,10 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
     assert_equal normalized(expected), normalized(parse(definition))
   end
 
-  def test_rested_rule_with_intermediate_callback
+  def test_rested_rule_with_intermediate_event_name
     expected = [
-      {:state => 1, :input => "a", :next_state => 2, :callback => "intermediate"},
-      {:state => 2, :input => "b", :next_state => 1, :callback => "ab"},
+      {:state => 1, :input => "a", :next_state => 2, :event_name => "intermediate"},
+      {:state => 2, :input => "b", :next_state => 1, :event_name => "ab"},
     ]
     definition = <<-EOF
       'a' => intermediate => {
@@ -105,11 +105,11 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
 
   def test_string_inputs
     expected = [
-      {:state => 1, :input => "spam", :next_state => 2, :callback => nil},
-      {:state => 2, :input => "spam", :next_state => 3, :callback => nil},
-      {:state => 3, :input => "spam", :next_state => 4, :callback => nil},
-      {:state => 3, :input => :other, :next_state => 1, :callback => "not_enough_spam"},
-      {:state => 4, :input => "egg", :next_state => 1, :callback => "rations"},
+      {:state => 1, :input => "spam", :next_state => 2, :event_name => nil},
+      {:state => 2, :input => "spam", :next_state => 3, :event_name => nil},
+      {:state => 3, :input => "spam", :next_state => 4, :event_name => nil},
+      {:state => 3, :input => :other, :next_state => 1, :event_name => "not_enough_spam"},
+      {:state => 4, :input => "egg", :next_state => 1, :event_name => "rations"},
     ]
     definition = <<-EOF
       "spam" => {
@@ -131,8 +131,8 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
     end
 
     def normalized(table)
-      # Set callback to nil if missing
-      table = table.map{|r| r = r.dup; r[:callback] ||= nil; r}
+      # Set event_name to nil if missing
+      table = table.map{|r| r = r.dup; r[:event_name] ||= nil; r}
       # Sort rows
       table.sort{ |a,b| [a[:state], a[:input].to_s] <=> [b[:state], b[:input].to_s] }
     end

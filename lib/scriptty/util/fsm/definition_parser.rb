@@ -33,8 +33,8 @@ module ScripTTY
         # [:input]
         #   The input used to match this entry, or the symbol :any.  The :any
         #   input represents any input that does not match a more specific entry.
-        # [:callback]
-        #   The name of the callback to invoke when this entry is reached.
+        # [:event_name]
+        #   The name to be passed to the callback when this entry is reached.
         #   May be nil.
         # [:next_state]
         #   The next state to move to after the callback is invoked.
@@ -57,7 +57,7 @@ module ScripTTY
             # normalize_state_transition_table() by something more readable and
             # consistent.
             next_state = rule.sub_list ? rule.sub_list.object_id : :start
-            ttable << {:state => state, :input => rule.lhs.value, :next_state => next_state, :callback => rule.callback_name}
+            ttable << {:state => state, :input => rule.lhs.value, :next_state => next_state, :event_name => rule.event_name}
             if next_state != :start
               load_recursive(ttable, rule.sub_list, next_state)
             end

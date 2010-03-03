@@ -26,8 +26,8 @@ grammar ScripTTYFSMDefinition
   end
 
   rule mapping_line
-    WS* lhs _cn:( WS* "=>" WS* callback_name )? _bl:( WS* "=>" WS* braced_list )? EOL {
-      def callback_name
+    WS* lhs _cn:( WS* "=>" WS* event_name )? _bl:( WS* "=>" WS* braced_list )? EOL {
+      def event_name
         if _cn.nonterminal?
           _cn.elements[3].text_value
         else
@@ -48,7 +48,7 @@ grammar ScripTTYFSMDefinition
     string / char / other
   end
 
-  rule callback_name
+  rule event_name
     [a-z0-9_]+
   end
 
