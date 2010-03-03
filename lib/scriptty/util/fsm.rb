@@ -21,10 +21,10 @@ module ScripTTY
     class FSM
       # Exception for no matching state
       class NoMatch < ArgumentError
-        attr_reader :state, :input
-        def initialize(message, state, input)
+        attr_reader :input_sequence, :state
+        def initialize(message, input_sequence, state)
+          @input_sequence = input_sequence
           @state = state
-          @input = input
           super(message)
         end
       end
@@ -132,7 +132,7 @@ module ScripTTY
         # Look up for a state transition for the specified input
         t = @state_transitions[@state][input]
         t ||= @state_transitions[@state][:any]
-        raise NoMatch.new("No matching transition for state=#{@state.inspect}, input=#{input.inspect}", state, input) unless t
+        raise NoMatch.new("No matching transition for input_sequence=#{input_sequence.inspect} (state=#{state.inspect})", input_sequence, state) unless t
 
         # Set next_state and invoke the callback, if any is specified for this state transition.
         @next_state = t[:next_state]
