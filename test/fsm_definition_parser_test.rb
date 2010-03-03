@@ -34,7 +34,7 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
     definition = <<-EOF
       'spam' => foo   # correct form is: "spam" => foo
     EOF
-    assert_raises ArgumentError do
+    assert_raise ArgumentError do
       parse(definition)
     end
   end
