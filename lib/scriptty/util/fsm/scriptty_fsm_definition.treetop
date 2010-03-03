@@ -81,7 +81,7 @@ grammar ScripTTYFSMDefinition
   end
 
   rule str_unescaped
-    [^"\\\r\n] {
+    [^"\\\t\r\n] {
       def to_s
         text_value
       end

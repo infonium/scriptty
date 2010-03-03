@@ -124,6 +124,19 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
     assert_equal normalized(expected), normalized(parse(definition))
   end
 
+  # Tabs are not allowed inside quotes.  If you want to match tabs, escape them.
+  def test_disallow_tabs_inside_quotes
+    assert_raise ArgumentError do
+      parse("\"\t\" => foo\n")
+    end
+    assert_raise ArgumentError do
+      parse("'\t' => foo\n")
+    end
+    assert_nothing_raised do
+      parse("'\\t' => foo\n")
+    end
+  end
+
   private
 
     def parse(definition)
