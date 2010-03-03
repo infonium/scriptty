@@ -44,14 +44,14 @@ module ScripTTY
           parse_tree = parser.parse(definition + "\n")    # The grammar requires a newline at the end of the file, so make sure it's there.
           raise ArgumentError.new(parser.failure_reason) unless parse_tree
           state_transition_table = []
-          load_recursive(state_transition_table, parse_tree, :start)
+          load_recursive(state_transition_table, parse_tree, :start, {})
           normalize_state_transition_table(state_transition_table)
           state_transition_table
         end
 
         private
 
-        def load_recursive(ttable, t, state)  # :nodoc:
+        def load_recursive(ttable, t, state, dupcheck_hash)  # :nodoc:
           t.rules.each do |rule|
             # Use object_id to identify the state.  This will be replaced in
             # normalize_state_transition_table() by something more readable and
@@ -60,14 +60,16 @@ module ScripTTY
             if rule.lhs.respond_to? :cc_values
               # Character class (multiple equivalent inputs)
               rule.lhs.cc_values.each do |value|
+                dup_check(dupcheck_hash, rule, state, value)
                 ttable << {:state => state, :input => value, :next_state => next_state, :event_name => rule.event_name}
               end
             else
               # Single input
+              dup_check(dupcheck_hash, rule, state, rule.lhs.value)
               ttable << {:state => state, :input => rule.lhs.value, :next_state => next_state, :event_name => rule.event_name}
             end
             if next_state != :start
-              load_recursive(ttable, rule.sub_list, next_state)
+              load_recursive(ttable, rule.sub_list, next_state, dupcheck_hash)
             end
           end
           nil
@@ -90,8 +92,20 @@ module ScripTTY
           end
           nil
         end
+
+        def dup_check(dupcheck_hash, rule, state, input)  # :nodoc:
+          k = [state, input]
+          current_linenum = rule.input[0,rule.lhs.interval.first].split("\n", -1).length
+          current_line = rule.input[rule.interval].chomp
+          prev_linenum, prev_line = dupcheck_hash[k]
+          if prev_linenum
+            # Calculate the line number
+            raise ArgumentError.new("rule conflict\nline #{prev_linenum}: #{prev_line}\nline #{current_linenum}: #{current_line}")
+          end
+          dupcheck_hash[k] = [current_linenum, current_line]
+          nil
+        end
       end
     end
   end
 end
-

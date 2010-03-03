@@ -137,6 +137,23 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
     end
   end
 
+  # We should get an error on duplicate rules
+  def test_error_on_conflicting_rule
+    e = nil
+    assert_raise ArgumentError do
+      begin
+        parse(<<-EOF)
+          # Conflicts aren't necessarily obvious
+          'b' => foo
+          [a-c] => foo
+        EOF
+      rescue => e
+        raise
+      end
+    end
+    assert_match /^rule conflict/, e.message
+  end
+
   # Single-state test of character classes
   def test_character_classes_1state
     expected = [
