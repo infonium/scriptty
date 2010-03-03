@@ -1,0 +1,139 @@
+# Treetop grammar for ScripTTY::Util::FSM::DefinitionParser
+# Copyright (C) 2010  Infonium Inc
+#
+# This file is part of ScripTTY.
+#
+# ScripTTY is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published
+# by the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# ScripTTY is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU Lesser General Public License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public License
+# along with ScripTTY.  If not, see <http://www.gnu.org/licenses/>.
+
+grammar ScripTTYFSMDefinition
+  rule list
+    ( mapping_line / EOL )* {
+      def rules
+        elements.select { |e| e.respond_to? :lhs }
+      end
+    }
+  end
+
+  rule mapping_line
+    WS* lhs _cn:( WS* "=>" WS* callback_name )? _bl:( WS* "=>" WS* braced_list )? EOL {
+      def callback_name
+        if _cn.nonterminal?
+          _cn.elements[3].text_value
+        else
+          nil
+        end
+      end
+      def sub_list
+        if _bl.nonterminal?
+          _bl.braced_list.list
+        else
+          nil
+        end
+      end
+    }
+  end
+
+  rule lhs
+    string / char / other
+  end
+
+  rule callback_name
+    [a-z0-9_]+
+  end
+
+  rule braced_list
+    '{' WS* list WS* '}'
+  end
+
+  rule string
+    '"' v:( str_unescaped / str_octal / str_hex / str_single )* '"' {
+      def value
+        v.elements.map{|e| e.to_s}.join
+      end
+    }
+  end
+
+  rule char
+    "'" v:( str_unescaped / str_octal / str_hex / str_single ) "'" {
+      def value
+        v.to_s
+      end
+    }
+  end
+
+  rule other
+    '*' {
+      def value
+        :other
+      end
+    }
+  end
+
+  rule str_unescaped
+    [^"\\\r\n] {
+      def to_s
+        text_value
+      end
+    }
+  end
+
+  rule str_octal
+    "\\" [0-7] [0-7] [0-7] {
+      def to_s
+        text_value[1..-1].to_i(8).chr
+      end
+    }
+  end
+
+  rule str_hex
+    "\\" [Xx] [0-9A-Fa-f] [0-9A-Fa-f] {
+      def to_s
+        text_value[2..-1].to_i(16).chr
+      end
+    }
+  end
+
+  rule str_single
+    "\\" [enrt"'\\] {
+      def to_s
+        case text_value[1..-1]
+        when 'e'
+          "\e"
+        when 'n'
+          "\n"
+        when 'r'
+          "\r"
+        when 't'
+          "\t"
+        when '"'
+          '"'
+        when "'"
+          "'"
+        when "\\"
+          "\\"
+        end
+      end
+    }
+  end
+
+  # whitespace
+  rule WS
+    [ \t]
+  end
+
+  # trailing whitespace (optional), comment (optional), newline
+  rule EOL
+    WS* ('#' [^\r\n]* )? ( "\n" / "\r\n" )
+  end
+end
