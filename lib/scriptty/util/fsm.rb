@@ -155,6 +155,7 @@ module ScripTTY
           input = e.delete(:input)
           raise "BUG" if !state or !input
           e[:event] = e.delete(:event_name).to_sym if e[:event_name]   # Replace string event_name with symbol
+          transitions[e[:next_state]] ||= {} if e[:next_state]
           transitions[state] ||= {}
           transitions[state][input] = e
         end

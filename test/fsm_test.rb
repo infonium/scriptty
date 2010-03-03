@@ -43,6 +43,17 @@ class FSMTest < Test::Unit::TestCase
     assert_equal ['x', 'y'], fsm.input_sequence
   end
 
+  def test_empty_state
+    fsm = ScripTTY::Util::FSM.new(:definition => <<-EOF)
+      'x' => {
+      }
+    EOF
+    fsm.process("x")
+    assert_raise ScripTTY::Util::FSM::NoMatch do
+      fsm.process("y")
+    end
+  end
+
   # The FSM should accept more than just single characters as inputs.
   def test_string_inputs
     fsm = ScripTTY::Util::FSM.new(:definition => <<-EOF)
