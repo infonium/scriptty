@@ -57,7 +57,15 @@ module ScripTTY
             # normalize_state_transition_table() by something more readable and
             # consistent.
             next_state = rule.sub_list ? rule.sub_list.object_id : :start
-            ttable << {:state => state, :input => rule.lhs.value, :next_state => next_state, :event_name => rule.event_name}
+            if rule.lhs.respond_to? :cc_values
+              # Character class (multiple equivalent inputs)
+              rule.lhs.cc_values.each do |value|
+                ttable << {:state => state, :input => value, :next_state => next_state, :event_name => rule.event_name}
+              end
+            else
+              # Single input
+              ttable << {:state => state, :input => rule.lhs.value, :next_state => next_state, :event_name => rule.event_name}
+            end
             if next_state != :start
               load_recursive(ttable, rule.sub_list, next_state)
             end

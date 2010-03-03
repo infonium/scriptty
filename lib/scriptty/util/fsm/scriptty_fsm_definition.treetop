@@ -45,7 +45,7 @@ grammar ScripTTYFSMDefinition
   end
 
   rule lhs
-    string / char / other
+    string / char / char_class / other
   end
 
   rule event_name
@@ -72,10 +72,60 @@ grammar ScripTTYFSMDefinition
     }
   end
 
+  rule char_class
+    '[' carat:'^'? cc_char_or_range+ ']' {
+      def cc_values
+        retval = []
+        chars_or_ranges = elements[2].elements
+        chars_or_ranges.each do |cr|
+          if cr.last_char
+            fchar = cr.first_char.to_s.unpack("C*")[0]
+            lchar = cr.last_char.to_s.unpack("C*")[0]
+            (fchar..lchar).each do |c|
+              retval << c.chr
+            end
+          else
+            retval << cr.first_char.to_s
+          end
+        end
+        unless carat.empty?
+          # The leading carat is present, so we want all the characters *not* specified.
+          retval = (0..255).map{ |c| c.chr } - retval
+        end
+        retval.uniq
+      end
+    }
+  end
+
+  # A single character or range of characters
+  rule cc_char_or_range
+    first_char:cc_char r:( '-' last_char:cc_char )? {
+      def last_char
+        if r.empty?
+          nil
+        else
+          r.last_char
+        end
+      end
+    }
+  end
+
+  rule cc_char
+    cc_unescaped / str_octal / str_hex / str_single
+  end
+
   rule other
     '*' {
       def value
         :other
+      end
+    }
+  end
+
+  rule cc_unescaped
+    [^\\\-\^\[\]\t\r\n] {
+      def to_s
+        text_value
       end
     }
   end

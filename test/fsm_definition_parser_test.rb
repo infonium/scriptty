@@ -137,6 +137,57 @@ class FSMDefinitionParserTest < Test::Unit::TestCase
     end
   end
 
+  # Single-state test of character classes
+  def test_character_classes_1state
+    expected = [
+      {:state => 1, :input => "0", :next_state => 1, :event_name => "foo"},
+      {:state => 1, :input => "1", :next_state => 1, :event_name => "foo"},
+      {:state => 1, :input => "2", :next_state => 1, :event_name => "foo"},
+      {:state => 1, :input => "a", :next_state => 1, :event_name => "foo"},
+      {:state => 1, :input => "b", :next_state => 1, :event_name => "foo"},
+      {:state => 1, :input => "c", :next_state => 1, :event_name => "foo"},
+      {:state => 1, :input => "x", :next_state => 1, :event_name => "foo"},
+    ]
+    definition = <<-EOF
+      [0-2a-cx] => foo
+    EOF
+    assert_equal normalized(expected), normalized(parse(definition))
+  end
+
+  # Test "not" character class
+  def test_character_classes_1state_exclude
+    expected = []
+    (0..255).each { |i|
+      next if i == 0x61
+      expected << {:state => 1, :input => i.chr, :next_state => 1, :event_name => "foo"}
+    }
+    definition = <<-EOF
+      [^a] => foo
+    EOF
+    assert_equal normalized(expected), normalized(parse(definition))
+  end
+
+  # Multi-state test of character classes
+  def test_character_classes_nested
+    expected = [
+      {:state => 1, :input => "0",    :next_state => 2, :event_name => nil},
+      {:state => 1, :input => "1",    :next_state => 2, :event_name => nil},
+      {:state => 1, :input => "2",    :next_state => 2, :event_name => nil},
+      {:state => 2, :input => "\x1e", :next_state => 1, :event_name => "foo"},
+      {:state => 2, :input => "\x1f", :next_state => 1, :event_name => "foo"},
+      {:state => 2, :input => " ",    :next_state => 1, :event_name => "foo"},
+      {:state => 2, :input => "!",    :next_state => 1, :event_name => "foo"},
+      {:state => 2, :input => :other, :next_state => 1, :event_name => "bar"},
+    ]
+    definition = <<-EOF
+      [0-2] => {
+        [\x1e-!] => foo
+        * => bar
+      }
+    EOF
+    assert_equal normalized(expected), normalized(parse(definition))
+  end
+
   private
 
     def parse(definition)
