@@ -1,5 +1,5 @@
-# FSM definition parser
-# Copyright (C) 2010  Infonium Inc
+# = FSM definition parser
+# Copyright (C) 2010  Infonium Inc.
 #
 # This file is part of ScripTTY.
 #
@@ -20,8 +20,8 @@ require 'treetop'
 
 Treetop.load File.join(File.dirname(__FILE__), "scriptty_fsm_definition.treetop")
 
-module ScripTTY
-  module Util
+module ScripTTY # :nodoc:
+  module Util # :nodoc:
     class FSM
       class DefinitionParser
         # Returns an array of hashes representing the state transition table

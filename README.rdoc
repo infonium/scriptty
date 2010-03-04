@@ -14,7 +14,7 @@ None yet, but DG410 and limited xterm support is planned.
 
 = License
 
-Copyright © 2010  Infonium Inc
+Copyright © 2010  Infonium Inc.
 
 ScripTTY is free software: you can redistribute it and/or modify
 it under the terms of the GNU Lesser General Public License as published

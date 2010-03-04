@@ -1,5 +1,5 @@
-# Finite state machine for terminal emulation
-# Copyright (C) 2010  Infonium Inc
+# = Finite state machine for terminal emulation
+# Copyright (C) 2010  Infonium Inc.
 #
 # This file is part of ScripTTY.
 #
@@ -16,8 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with ScripTTY.  If not, see <http://www.gnu.org/licenses/>.
 
-module ScripTTY
-  module Util
+module ScripTTY # :nodoc:
+  module Util # :nodoc:
     class FSM
       # Exception for no matching state
       class NoMatch < ArgumentError

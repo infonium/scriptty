@@ -1,5 +1,5 @@
-# Tests for ScripTTY::Util::FSM::DefinitionParser
-# Copyright (C) 2010  Infonium Inc
+# = Tests for ScripTTY::Util::FSM::DefinitionParser
+# Copyright (C) 2010  Infonium Inc.
 #
 # This file is part of ScripTTY.
 #
