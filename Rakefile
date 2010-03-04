@@ -10,3 +10,9 @@ require 'rake/testtask'
 Rake::TestTask.new(:test) do |t|
   t.pattern = 'test/**/*_test.rb'
 end
+
+require 'rcov/rcovtask'
+Rcov::RcovTask.new do |t|
+  t.pattern = 'test/**/*_test.rb'
+  t.rcov_opts = ['--text-report', '--exclude', 'gems,rcov,jruby.*,\(eval\)']
+end
