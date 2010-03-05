@@ -1,0 +1,262 @@
+Script started on Mon Mar  1 17:14:33 2010
+iMac-002:[94m~/components/scriptty/main[39m
+dwaynelitzenberger$ clear
+[H[2JiMac-002:[94m~/components/scriptty/main[39m
+dwaynelitzenberger$ 
+iMac-002:[94m~/components/scriptty/main[39m
+dwaynelitzenberger$ ls
+Rakefile               lots_of_operations.bin xterm-vim-session.bin
+dg410only.bin          mytest.rb
+[1m[34mlib[m[m                    test.txt
+iMac-002:[94m~/components/scriptty/main[39m
+dwaynelitzenberger$ vim mytest.rb 
+7[?47h[?1h=[1;24r[m[H[2J[24;1H[1m[37m[41mE325: ATTENTION[m
+Found a swap file by the name ".mytest.rb.swp"
+          owned by: dwaynelitzenberger   dated: Mon Mar  1 16:23:54 2010
+         file name: ~dwaynelitzenberger/components/scriptty/main/mytest.rb
+          modified: no
+         user name: dwaynelitzenberger   host name: iMac-002.local
+        process ID: 21299 (still running)
+While opening file "mytest.rb"
+             dated: Mon Mar  1 16:23:51 2010
+
+(1) Another program may be editing the same file.
+    If this is the case, be careful not to end up with two
+    different instances of the same file when making changes.
+    Quit, or continue with caution.
+
+(2) An edit session for this file crashed.
+    If this is the case, use ":recover" or "vim -r mytest.rb"
+    to recover the changes (see ":help recovery").
+    If you did this already, delete the swap file ".mytest.rb.swp"
+    to avoid this message.
+
+[32mSwap file ".mytest.rb.swp" already exists![m
+[32m[O]pen Read-Only, (E)dit anyway, (R)ecover, (Q)uit, (A)bort: [m[24;1H[K[24;1H"mytest.rb" "mytest.rb" [readonly] 181L, 4942C[>c[1;1H[33m  1 [m[1m[35m#!/usr/bin/env jruby[m
+[33m  2 [m[2;5H[K[3;1H[33m  3 [m[1m[34m$LOAD_PATH[m.unshift [1m[35m"lib"[m[3;29H[K[4;1H[33m  4 [m[4;11H[K[5;1H[33m  5 [m[1m[31m#require 'scriptty/async_sockets'[m[5;38H[K[6;1H[33m  6 [m[1m[35mrequire[m [1m[35m'scriptty/dg410-transition-table'[m
+[33m  7 [m[1m[35mrequire[m [1m[35m'scriptty/screen_buffer'[m[7;37H[K[8;1H[33m  8 [m[8;9H[K[9;1H[33m  9 [m[1m[35mmodule[m [1m[34mScriptty[m[9;20H[K[10;1H[33m 10 [m  [1m[35mmodule[m [1m[34mTerm[m[10;18H[K[11;1H[33m 11 [m    [1m[35mclass[m [1m[34mDG410[m
+[33m 12 [m[12;5H[K[13;1H[33m 13 [m      [1m[35mclass[m [1m[34mProprietaryEscapeParser[m[13;41H[K[14;1H[33m 14 [m        [1m[35mdef[m [1m[34minitialize[m(target)[14;35H[K[15;1H[33m 15 [m          [1m[34m@target[m = target[15;31H[K[16;1H[33m 16 [m[9C [1m[34m@state[m = [1m[35m:opcode[m
+[33m 17 [m          [1m[34m@opcode[m = [1m[35m""[m[17;27H[K[18;1H[33m 18 [m          [1m[34m@n[m = [1m[35mnil[m[18;23H[K[19;1H[33m 19 [m          [1m[34m@payload[m = [1m[35m""[m[19;28H[K[20;1H[33m 20 [m        [1m[35mend[m[20;16H[K[21;1H[33m 21 [m[21;5H[K[22;1H[33m 22 [m[7C [1m[31m# <036> ~ <2-byte-opcode> <n> <n*bytes>[m
+[1m[33m[40mmytest.rb [RO]                                                1,1            Top[1;5H[23;63H2,0-1          Top[2;5H[23;63H3,1            Top[3;5H[23;63H4,0-1          Top[4;5H[23;63H5,1            Top[5;5H[23;63H6,1            Top[6;5H[23;63H7,1            Top[7;5H[23;63H8,0-1          Top[8;5H[23;63H9,1            Top[9;5H[23;63H10,1           Top[10;5H[23;63H11,1           Top[11;5H[23;63H12,0-1         Top[12;5H[23;63H13,1           Top[13;5H[23;63H14,1           Top[14;5H[23;63H15,1           Top[15;5H[23;63H16,1           Top[16;5H[23;63H17,1           Top[17;5H[23;63H18,1           Top[18;5H[23;63H19,1           Top[19;5H[23;63H20,1           Top[20;5H[23;63H21,0-1         Top[21;5H[23;63H22,1           Top[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 23 [m[7C [1m[35mdef[m [1m[34mfeed_byte[m(input_byte)[24;1H[K[23;63H[1m[33m[40m23,1            0%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 24 [m[9C [31mcase[m [1m[34m@state[m[23;63H[1m[33m[40m24,1            1%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 25 [m[9C [31mwhen[m [1m[35m:opcode[m[23;63H[1m[33m[40m25,1            1%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 26 [m[11C [1m[34m@opcode[m << input_byte[23;63H[1m[33m[40m26,1            2%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 27 [m[11C [31mif[m [1m[34m@opcode[m.length >= [1m[35m2[m[23;63H[1m[33m[40m27,1            3%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 28 [m[13C [1m[34m@state[m = [1m[35m:n[m[23;63H[1m[33m[40m28,1            3%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 29 [m[11C [31mend[m[23;63H[1m[33m[40m29,1            4%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 30 [m[9C [31mwhen[m [1m[35m:n[m[23;63H[1m[33m[40m30,1            5%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 31 [m[11C [1m[34m@n[m = input_byte.unpack([1m[35m"C*"[m)[[1m[35m0[m][23;63H[1m[33m[40m31,1            5%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 32 [m[11C [31mif[m [1m[34m@n[m > [1m[35m0[m[23;63H[1m[33m[40m32,1            6%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 33 [m[13C [1m[34m@state[m = [1m[35m:payload[m[23;63H[1m[33m[40m33,1            6%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 34 [m[11C [31melse[m[23;63H[1m[33m[40m34,1            7%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 35 [m[13C [1m[34m@state[m = [1m[35m:done[m[23;63H[1m[33m[40m35,1            8%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 36 [m[11C [31mend[m[23;63H[1m[33m[40m36,1            8%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 37 [m[9C [31mwhen[m [1m[35m:payload[m[23;63H[1m[33m[40m37,1            9%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 38 [m[11C [1m[34m@payload[m << input_byte[23;63H[1m[33m[40m38,1           10%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 39 [m[11C [31mif[m [1m[34m@payload[m.length >= [1m[34m@n[m[23;63H[1m[33m[40m39,1           10%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 40 [m[13C [1m[34m@state[m = [1m[35m:done[m[23;63H[1m[33m[40m40,1           11%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 41 [m[11C [31mend[m[23;63H[1m[33m[40m41,1           11%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 42 [m[9C [31melse[m[23;63H[1m[33m[40m42,1           12%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 43 [m[11C [31mraise[m [1m[35m"BUG"[m[23;63H[1m[33m[40m43,1           13%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 44 [m[9C [31mend[m[23;63H[1m[33m[40m44,1           13%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 45 [m[9C [31mif[m [1m[34m@state[m == [1m[35m:done[m[23;63H[1m[33m[40m45,1           14%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m 46 [m[11C [1m[34m@target[m.handle([1m[35m:proprietary_escape[m, [1m[35m"#{[m[1m[34m@opcode[m[1m[35m}#{[m[[1m[34m@n[m].pack([1m[35m"C*"[m))[22;1H[33m    [m[1m[35m}#{[m[1m[34m@payload[m[1m[35m}"[m)[23;63H[1m[33m[40m46,1           15%[21;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 47 [m[11C [31mreturn[m [1m[35mtrue[m[23;63H[1m[33m[40m47,1           16%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 48 [m[9C [31melse[m[23;63H[1m[33m[40m48,1           16%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 49 [m[11C [31mreturn[m [1m[35mfalse[m[23;63H[1m[33m[40m49,1           17%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 50 [m[9C [31mend[m[23;63H[1m[33m[40m50,1           18%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 51 [m[7C [1m[35mend[m[23;63H[1m[33m[40m51,1           18%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 52 [m      [1m[35mend[m[23;63H[1m[33m[40m52,1           19%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 53 [m[23;63H[1m[33m[40m53,0-1         20%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 54 [m      [1m[35mdef[m [1m[34minitialize[m(target)[23;63H[1m[33m[40m54,1           20%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 55 [m[7C [1m[34m@byte[m = [1m[35m1[m [1m[31m# DEBUG [m[30m[43mFIXME[m[23;63H[1m[33m[40m55,1           21%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 56 [m[7C [1m[34m@target[m = target[23;63H[1m[33m[40m56,1           21%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 57 [m[7C [1m[34m@state[m = [1m[35m1[m    [1m[31m# default state is 1[m[23;63H[1m[33m[40m57,1           22%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 58 [m[7C [1m[34m@alt_parser[m = [1m[35mnil[m  [1m[31m# alternative escape sequence parser[m[23;63H[1m[33m[40m58,1           23%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 59 [m[7C [1m[34m@current_escape_sequence[m = [1m[35m""[m[23;63H[1m[33m[40m59,1           23%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m 60 [m[7C load_transition_table([1m[34mFile[m.join([1m[34mFile[m.dirname([1m[35m__FILE__[m), [1m[35m"lib/scripttt[m[22;1H[33m    [m[1m[35my/dg410-transition-table.rb"[m))   [1m[31m# DEBUG [m[30m[43mFIXME[m[23;63H[1m[33m[40m60,1           24%[21;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 61 [m      [1m[35mend[m[23;63H[1m[33m[40m61,1           25%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 62 [m[23;63H[1m[33m[40m62,0-1         26%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 63 [m      [1m[35mdef[m [1m[34mfeed[m(input_bytes)[23;63H[1m[33m[40m63,1           26%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 64 [m[7C input_bytes.length.times [31mdo[m |[1m[34mi[m|[23;63H[1m[33m[40m64,1           27%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 65 [m[9C feed_byte(input_bytes[i,[1m[35m1[m])[23;63H[1m[33m[40m65,1           27%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m 66 [m[9C [1m[34m@byte[m += [1m[35m1[m [1m[31m# DEBUG [m[30m[43mFIXME[m
+[33m 67 [m[7C [31mend[m[23;63H[1m[33m[40m66,1           28%[21;5H[23;63H67,1           28%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 68 [m      [1m[35mend[m[23;63H[1m[33m[40m68,1           29%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 69 [m[23;63H[1m[33m[40m69,0-1         30%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 70 [m      [1m[31m#private[m[23;63H[1m[33m[40m70,1           30%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 71 [m[23;63H[1m[33m[40m71,0-1         31%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 72 [m      [1m[35mdef[m [1m[34mfeed_byte[m(input_byte)[23;63H[1m[33m[40m72,1           31%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 73 [m[7C [31mif[m [1m[34m@state[m != [1m[35m1[m[23;63H[1m[33m[40m73,1           32%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 74 [m[9C [1m[34m@current_escape_sequence[m << input_byte[23;63H[1m[33m[40m74,1           33%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 75 [m[7C [31melse[m[23;63H[1m[33m[40m75,1           33%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 76 [m[9C [1m[34m@current_escape_sequence[m = input_byte.dup[23;63H[1m[33m[40m76,1           34%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 77 [m[7C [31mend[m[23;63H[1m[33m[40m77,1           35%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 78 [m[7C [31mif[m [1m[34m@alt_parser[m[23;63H[1m[33m[40m78,1           35%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 79 [m[9C [31mif[m [1m[34m@alt_parser[m.feed_byte(input_byte)[23;63H[1m[33m[40m79,1           36%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 80 [m[11C [1m[34m@state[m = [1m[34m@next_state[m[23;63H[1m[33m[40m80,1           36%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m 81 [m[11C [1m[34m@alt_parser[m = [1m[35mnil[m
+[33m 82 [m[9C [31mend[m[23;63H[1m[33m[40m81,1           37%[21;5H[23;63H82,1           37%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 83 [m[9C [31mreturn[m[23;63H[1m[33m[40m83,1           38%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 84 [m[7C [31mend[m[23;63H[1m[33m[40m84,1           38%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 85 [m[7C t = [1m[34m@state_transitions[m[[1m[34m@state[m][input_byte][23;63H[1m[33m[40m85,1           39%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 86 [m[7C t ||= [1m[34m@state_transitions[m[[1m[34m@state[m][[1m[35m:any[m][23;63H[1m[33m[40m86,1           40%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m 87 [m[7C [1m[31m#raise ArgumentError.new("Unknown escape state=#{@state.inspect} inpp[m[22;1H[33m    [m[1m[31mut=#{input_byte.inspect}") unless t[m[23;63H[1m[33m[40m87,1           41%[21;5H[1;22r[m[1;1H[3M[1;24r[20;1H[33m 88 [m[7C [31mraise[m [1m[34mArgumentError[m.new([1m[35m"Unknown escape sequence #{[m[1m[34m@current_escape_ss[m[21;1H[33m    [m[1m[34mequence[m.inspect[1m[35m} state=#{[m[1m[34m@state[m.inspect[1m[35m} input=#{[minput_byte.inspect[1m[35m} byte=0xx[m[22;1H[33m    [m[1m[35m#{[m[1m[34m@byte[m.to_s([1m[35m16[m)[1m[35m}"[m) [31munless[m t [1m[31m# DEBUG [m[30m[43mFIXME[m[23;63H[1m[33m[40m88,1           42%[20;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 89 [m[7C [1m[34m@next_state[m = t[[1m[35m:next_state[m][23;63H[1m[33m[40m89,1           43%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 90 [m[7C [31mif[m t[[1m[35m:callback[m][23;63H[1m[33m[40m90,1           43%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 91 [m[9C method_name = [1m[35m"handle_#{[mt[[1m[35m:callback[m][1m[35m}"[m.to_sym[23;63H[1m[33m[40m91,1           44%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m 92 [m[9C [31mif[m respond_to?(method_name)   [1m[31m# check for the method in this objecc[m[22;1H[33m    [m[1m[31mt[m[23;63H[1m[33m[40m92,1           45%[21;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 93 [m[11C send(method_name, [1m[34m@current_escape_sequence[m)[23;63H[1m[33m[40m93,1           46%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 94 [m[9C [31melse[m[23;63H[1m[33m[40m94,1           46%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 95 [m[11C [1m[34m@target[m.handle(t[[1m[35m:callback[m], [1m[34m@current_escape_sequence[m)[23;63H[1m[33m[40m95,1           47%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 96 [m[9C [31mend[m[23;63H[1m[33m[40m96,1           47%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 97 [m[9C [1m[31m#elsif target.respond_to?(:unhandled)[m[23;63H[1m[33m[40m97,1           48%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 98 [m[9C [1m[31m#  target.unhandled(t[:callback].to_sym, input_byte)[m[23;63H[1m[33m[40m98,1           49%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m 99 [m[9C [1m[31m#else[m[23;63H[1m[33m[40m99,1           49%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m100 [m[9C [1m[31m#  print "[#{t[:callback]}]"    # DEBUG [m[30m[43mFIXME[m[1m[31m: should we die if thh[m[22;1H[33m    [m[1m[31mis happens?[m[23;63H[1m[33m[40m100,1          50%[21;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m101 [m[9C [1m[31m#  $stdout.flush[m[23;63H[1m[33m[40m101,1          51%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m102 [m[9C [1m[31m#end[m[23;63H[1m[33m[40m102,1          51%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m103 [m[7C [31mend[m[23;63H[1m[33m[40m103,1          52%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m104 [m[7C [1m[34m@state[m = [1m[34m@next_state[m
+[33m105 [m      [1m[35mend[m[23;63H[1m[33m[40m104,1          53%[21;5H[23;63H105,1          53%[22;5H[1;22r[m[1;1H[3M[1;24r[20;1H[33m106 
+107 [m      [1m[31m# escapes starting with "\036~"[m
+[33m108 [m      [1m[31m# <036> ~ <2-byte-opcode> <n> <n*bytes>[m[23;63H[1m[33m[40m106,0-1        54%[20;5H[23;63H107,1          54%[21;5H[23;63H108,1          54%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m109 [m      [1m[35mdef[m [1m[34mhandle_proprietary_escape[m(input_byte)[23;63H[1m[33m[40m109,1          55%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m110 [m[7C [1m[34m@alt_parser[m = [1m[34mProprietaryEscapeParser[m.new([1m[34m@target[m)[23;63H[1m[33m[40m110,1          55%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m111 [m      [1m[35mend[m[23;63H[1m[33m[40m111,1          56%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m112 
+113 [m      [1m[35mdef[m [1m[34mload_transition_table[m(filename)[23;63H[1m[33m[40m112,0-1        57%[21;5H[23;63H113,1          57%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m114 [m[7C [1m[31m# @state_transitions[current_state][input] = {:next_state => x, :evee[m[22;1H[33m    [m[1m[31mnt => x}[m[23;63H[1m[33m[40m114,1          58%[21;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m115 [m[7C [1m[34m@state_transitions[m = {}[23;63H[1m[33m[40m115,1          59%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m116 [m[7C [31meval[m([1m[34mFile[m.read(filename), [1m[35mnil[m, filename, [1m[35m1[m).each [31mdo[m |[1m[34mstate[m, [1m[34minput[m, [1m[34mnn[m[22;1H[33m    [m[1m[34mext_state[m, [1m[34mcallback[m|     [1m[31m# [m[30m[43mFIXME[m[23;63H[1m[33m[40m116,1          59%[21;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m117 [m[9C [1m[34m@state_transitions[m[state] ||= {}[23;63H[1m[33m[40m117,1          60%[22;5H[1;22r[m[1;1H[3M[1;24r[20;1H[33m118 [m[9C [1m[34m@state_transitions[m[state][input] = {[1m[35m:next_state[m => next_state, [1m[35m:caa[m[21;1H[33m    [m[1m[35mllback[m => callback}
+[33m119 [m[7C [31mend[m[23;63H[1m[33m[40m118,1          61%[20;5H[23;63H119,1          61%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m120 [m      [1m[35mend[m[23;63H[1m[33m[40m120,1          62%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m121 [m    [1m[35mend[m[23;63H[1m[33m[40m121,1          62%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m122 [m  [1m[35mend[m[23;63H[1m[33m[40m122,1          63%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m123 [m[1m[35mend[m[23;63H[1m[33m[40m123,1          64%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m124 [m[23;63H[1m[33m[40m124,0-1        64%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m125 [m[23;63H[1m[33m[40m125,0-1        65%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m126 [m[1m[35mclass[m [1m[34mTarget[m[23;63H[1m[33m[40m126,1          66%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m127 [m[23;63H[1m[33m[40m127,0-1        66%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m128 [m  [1m[34mIGNORE[m = [1m[35m%w( blink_enable blink_disable blink_off blink_on reverse_video_oo[m[22;1H[33m    [m[1m[35mff dim_off dim_on )[m.map{|[1m[34mx[m| x.to_sym}[23;63H[1m[33m[40m128,1          67%[21;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m129 [m[23;63H[1m[33m[40m129,0-1        68%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m130 [m  [1m[35mdef[m [1m[34minitialize[m[23;63H[1m[33m[40m130,1          68%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m131 [m    [1m[34m@screen[m = [1m[34mScriptty[m::[1m[34mScreenBuffer[m.new[23;63H[1m[33m[40m131,1          69%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m132 [m  [1m[35mend[m
+[33m133 [m[23;63H[1m[33m[40m132,1          70%[21;5H[23;63H133,0-1        70%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m134 [m[23;63H[1m[33m[40m134,0-1        70%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m135 [m  [1m[35mdef[m [1m[34mhandle[m(name, input)
+[33m136 [m    [31mif[m respond_to?([1m[35m"handle_#{[mname[1m[35m}"[m)[23;63H[1m[33m[40m135,1          72%[21;5H[23;63H136,1          72%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m137 [m      send([1m[35m"handle_#{[mname[1m[35m}"[m, input)[23;63H[1m[33m[40m137,1          72%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m138 [m    [31melse[m   [1m[31m# DEBUG [m[30m[43mFIXME[m
+[33m139 [m      print [1m[35m"[#{[mname[1m[35m}]"[m[23;63H[1m[33m[40m138,1          73%[21;5H[23;63H139,1          73%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m140 [m    [31mend[m[23;63H[1m[33m[40m140,1          74%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m141 [m    [1m[34m@count[m ||= [1m[35m0[m[23;63H[1m[33m[40m141,1          75%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m142 [m    [1m[34m@count[m += [1m[35m1[m[23;63H[1m[33m[40m142,1          75%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m143 [m    [31mif[m [1m[34m@count[m % [1m[35m10[m == [1m[35m0[m[23;63H[1m[33m[40m143,1          76%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m144 [m      [1m[31m#dump[m[23;63H[1m[33m[40m144,1          76%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m145 [m      [1m[31m#gets[m[23;63H[1m[33m[40m145,1          77%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m146 [m    [31mend[m[23;63H[1m[33m[40m146,1          78%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m147 [m  [1m[35mend[m[23;63H[1m[33m[40m147,1          78%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m148 [m[23;63H[1m[33m[40m148,0-1        79%[22;5H[1;22r[m[1;1H[2M[1;24r[21;1H[33m149 [m  [1m[35mdef[m [1m[34mdump[m  [1m[31m# DEBUG [m[30m[43mFIXME[m
+[33m150 [m    print [1m[35m"\033c"[m[23;63H[1m[33m[40m149,1          80%[21;5H[23;63H150,1          80%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m151 [m    [1m[34m@screen[m.instance_eval([1m[35m"@glyphs"[m).instance_eval([1m[35m"@lines"[m).each [31mdo[m |[1m[34mline[m|[23;63H[1m[33m[40m151,1          81%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m152 [m      puts line[23;63H[1m[33m[40m152,1          81%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m153 [m    [31mend[m[23;63H[1m[33m[40m153,1          82%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m154 [m  [1m[35mend[m[23;63H[1m[33m[40m154,1          83%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m155 [m[23;63H[1m[33m[40m155,0-1        83%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m156 [m  [1m[35mdef[m [1m[34mhandle_literal[m(input)[23;63H[1m[33m[40m156,1          84%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m157 [m    [1m[34m@screen[m.print_char(input)[23;63H[1m[33m[40m157,1          84%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m158 [m    [1m[31m#dump[m[23;63H[1m[33m[40m158,1          85%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m159 [m  [1m[35mend[m[23;63H[1m[33m[40m159,1          86%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m160 [m[23;63H[1m[33m[40m160,0-1        86%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m161 [m  [1m[35mdef[m [1m[34mhandle_new_line[m(input)[23;63H[1m[33m[40m161,1          87%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m162 [m    [1m[34m@screen[m.carriage_return[23;63H[1m[33m[40m162,1          88%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m163 [m    [1m[34m@screen[m.cursor_down[23;63H[1m[33m[40m163,1          88%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m164 [m  [1m[35mend[m[23;63H[1m[33m[40m164,1          89%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m165 [m[23;63H[1m[33m[40m165,0-1        89%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m166 [m  [1m[35mdef[m [1m[34mhandle_carriage_return[m(input)[23;63H[1m[33m[40m166,1          90%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m167 [m    [1m[34m@screen[m.carriage_return[23;63H[1m[33m[40m167,1          91%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m168 [m  [1m[35mend[m[23;63H[1m[33m[40m168,1          91%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m169 [m[23;63H[1m[33m[40m169,0-1        92%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m170 [m  [1m[35mdef[m [1m[34mhandle_erase_to_end_of_line[m(input)[23;63H[1m[33m[40m170,1          93%[22;5H[m[H[2J[1;1H[33m149 [m  [1m[35mdef[m [1m[34mdump[m  [1m[31m# DEBUG [m[30m[43mFIXME[m
+[33m150 [m    print [1m[35m"\033c"[m
+[33m151 [m    [1m[34m@screen[m.instance_eval([1m[35m"@glyphs"[m).instance_eval([1m[35m"@lines"[m).each [31mdo[m |[1m[34mline[m|
+[33m152 [m      puts line
+[33m153 [m    [31mend[m
+[33m154 [m  [1m[35mend[m
+[33m155 
+156 [m  [1m[35mdef[m [1m[34mhandle_literal[m(input)
+[33m157 [m    [1m[34m@screen[m.print_char(input)
+[33m158 [m    [1m[31m#dump[m
+[33m159 [m  [1m[35mend[m
+[33m160 
+161 [m  [1m[35mdef[m [1m[34mhandle_new_line[m(input)
+[33m162 [m    [1m[34m@screen[m.carriage_return
+[33m163 [m    [1m[34m@screen[m.cursor_down
+[33m164 [m  [1m[35mend[m
+[33m165 
+166 [m  [1m[35mdef[m [1m[34mhandle_carriage_return[m(input)
+[33m167 [m    [1m[34m@screen[m.carriage_return
+[33m168 [m  [1m[35mend[m
+[33m169 
+170 [m  [1m[35mdef[m [1m[34mhandle_erase_to_end_of_line[m(input)
+[1m[33m[40mmytest.rb [RO]                                                170,1          93%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m171 [m    [1m[34m@screen[m.erase_to_end_of_line[23;63H[1m[33m[40m171,1          93%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m172 [m  [1m[35mend[m[23;63H[1m[33m[40m172,1          94%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m173 [m[23;63H[1m[33m[40m173,0-1        94%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m174 [m  [1m[35mdef[m [1m[34mhandle_write_window_address[m(input)[23;63H[1m[33m[40m174,1          95%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m175 [m[41m    [m[23;63H[1m[33m[40m175,1          96%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m176 [m  [1m[35mend[m[23;63H[1m[33m[40m176,1          96%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m177 [m[1m[35mend[m[23;63H[1m[33m[40m177,1          97%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m178 [m[23;63H[1m[33m[40m178,0-1        98%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m179 [mt = [1m[34mScriptty[m::[1m[34mTerm[m::[1m[34mDG410[m.new([1m[34mTarget[m.new)[23;63H[1m[33m[40m179,1          98%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m180 [m[1m[31m#t.feed(File.read("lots_of_operations.bin"))[m[23;63H[1m[33m[40m180,1          99%[22;5H[1;22r[m[22;1H
+[1;24r[22;1H[33m181 [mt.feed([1m[34mFile[m.read([1m[35m"dg410only.bin"[m))[23;63H[1m[33m[40m181,1          Bot[22;5H[23;63H180,1          Bot[21;5H[23;63H181,1          Bot[22;5H[23;63H180,1          Bot[21;5H[23;63H179,1          Bot[20;5H[m[H[2J[1;1H[33m  1 [m[1m[35m#!/usr/bin/env jruby[m
+[33m  2 
+  3 [m[1m[34m$LOAD_PATH[m.unshift [1m[35m"lib"[m
+[33m  4 
+  5 [m[1m[31m#require 'scriptty/async_sockets'[m
+[33m  6 [m[1m[35mrequire[m [1m[35m'scriptty/dg410-transition-table'[m
+[33m  7 [m[1m[35mrequire[m [1m[35m'scriptty/screen_buffer'[m
+[33m  8 
+  9 [m[1m[35mmodule[m [1m[34mScriptty[m
+[33m 10 [m  [1m[35mmodule[m [1m[34mTerm[m
+[33m 11 [m    [1m[35mclass[m [1m[34mDG410[m
+[33m 12 
+ 13 [m      [1m[35mclass[m [1m[34mProprietaryEscapeParser[m
+[33m 14 [m[7C [1m[35mdef[m [1m[34minitialize[m(target)
+[33m 15 [m[9C [1m[34m@target[m = target
+[33m 16 [m[9C [1m[34m@state[m = [1m[35m:opcode[m
+[33m 17 [m[9C [1m[34m@opcode[m = [1m[35m""[m
+[33m 18 [m[9C [1m[34m@n[m = [1m[35mnil[m
+[33m 19 [m[9C [1m[34m@payload[m = [1m[35m""[m
+[33m 20 [m[7C [1m[35mend[m
+[33m 21 
+ 22 [m[7C [1m[31m# <036> ~ <2-byte-opcode> <n> <n*bytes>[m
+[1m[33m[40mmytest.rb [RO]                                                1,1            Top[1;5H[23;63H2,0-1          Top[2;5H[23;63H3,1            Top[3;5H[1;22r[m[1;1H[11M[1;24r[12;1H[33m 23 [m[7C [1m[35mdef[m [1m[34mfeed_byte[m(input_byte)
+[33m 24 [m[9C [31mcase[m [1m[34m@state[m
+[33m 25 [m[9C [31mwhen[m [1m[35m:opcode[m
+[33m 26 [m[11C [1m[34m@opcode[m << input_byte
+[33m 27 [m[11C [31mif[m [1m[34m@opcode[m.length >= [1m[35m2[m
+[33m 28 [m[13C [1m[34m@state[m = [1m[35m:n[m
+[33m 29 [m[11C [31mend[m
+[33m 30 [m[9C [31mwhen[m [1m[35m:n[m
+[33m 31 [m[11C [1m[34m@n[m = input_byte.unpack([1m[35m"C*"[m)[[1m[35m0[m]
+[33m 32 [m[11C [31mif[m [1m[34m@n[m > [1m[35m0[m
+[33m 33 [m[13C [1m[34m@state[m = [1m[35m:payload[m[23;63H[1m[33m[40m14,9            6%[3;13H[1;22r[m[1;1H[11M[1;24r[12;1H[33m 34 [m[11C [31melse[m
+[33m 35 [m[13C [1m[34m@state[m = [1m[35m:done[m
+[33m 36 [m[11C [31mend[m
+[33m 37 [m[9C [31mwhen[m [1m[35m:payload[m
+[33m 38 [m[11C [1m[34m@payload[m << input_byte
+[33m 39 [m[11C [31mif[m [1m[34m@payload[m.length >= [1m[34m@n[m
+[33m 40 [m[13C [1m[34m@state[m = [1m[35m:done[m
+[33m 41 [m[11C [31mend[m
+[33m 42 [m[9C [31melse[m
+[33m 43 [m[11C [31mraise[m [1m[35m"BUG"[m
+[33m 44 [m[9C [31mend[m[23;63H[1m[33m[40m25,11          13%[3;15H[1;22r[m[1;1H[11M[1;24r[12;1H[33m 45 [m[9C [31mif[m [1m[34m@state[m == [1m[35m:done[m
+[33m 46 [m[11C [1m[34m@target[m.handle([1m[35m:proprietary_escape[m, [1m[35m"#{[m[1m[34m@opcode[m[1m[35m}#{[m[[1m[34m@n[m].pack([1m[35m"C*"[m))[14;1H[33m    [m[1m[35m}#{[m[1m[34m@payload[m[1m[35m}"[m)
+[33m 47 [m[11C [31mreturn[m [1m[35mtrue[m
+[33m 48 [m[9C [31melse[m
+[33m 49 [m[11C [31mreturn[m [1m[35mfalse[m
+[33m 50 [m[9C [31mend[m
+[33m 51 [m[7C [1m[35mend[m
+[33m 52 [m      [1m[35mend[m
+[33m 53 
+ 54 [m      [1m[35mdef[m [1m[34minitialize[m(target)[23;63H[1m[33m[40m36,13          20%[3;17H[24;1H[m:s:se:set:set :set n:set no:set now:set nowr:set nowra:set nowrap:set nowrap[14;1H[33m 47 [m            [31mreturn[m [1m[35mtrue[m[15;2H[33m48[m[10C [31mels[m[15;19H[K[16;2H[33m49[m[10C   [31mreturn[m [1m[35mfalse[m
+[33m 50[m[10C [31mend[m[17;18H[K[18;2H[33m51[m[8C [1m[35mend[m[18;16H[K[19;2H[33m52[m[6C [1m[35mend[m[19;14H[K[20;2H[33m53[m[20;11H[K[21;2H[33m54[m[6C [1m[35mdef[m [1m[34minitialize[m(target)[22;2H[33m55[m[6C   [1m[34m@byte[m = [1m[35m1[m [1m[31m# DEBUG [m[30m[43mFIXME[m
+[1m[33m[40mmytest.rb [RO][48C36,13          20%[3;17H[23;63H37,13          20%[4;17H[23;63H38,13          20%[5;17H[23;63H39,13          20%[6;17H[23;63H40,13          20%[7;17H[23;63H41,13          20%[8;17H[23;63H42,13          20%[9;17H[23;63H43,13          20%[10;17H[23;63H44,13          20%[11;17H[23;63H45,13          20%[12;17H[23;63H46,13          20%[13;17H[m[1;17H[K[2;19H[K[3;17H[K[4;15H[K[5;17H[K[6;17H[K[7;19H[K[8;17H[K[9;15H[K[10;17H[K[11;15H[K[12;15H[K[13;4H[33m [m[1m[34m@opcode[m[1m[35m}#{[m[[1m[34m@n[m].pack([1m[35m"C*"[m)[1m[35m}#{[m[1m[34m@payload[m[1m[35m}"[m[46m)[m[13;44H[K[14;17H[K[15;15H[K[16;17H[K[17;15H[K[18;13H[K[19;11H[K[21;11H[K[22;13H[K[23;1H[1m[33m[40mmytest.rb [RO][48C46,90          20%[13;43H[m)[23;63H[1m[33m[40m46,89          20%[13;42H[m[13;32H[1m[35m[46m{[m[1m[34m@payload[m[1m[35m[46m}[m[1m[35m"[m)[23;63H[1m[33m[40m46,88          20%[13;41H[m[13;32H[1m[35m{[m[1m[34m@payload[m[1m[35m}"[m)[23;63H[1m[33m[40m46,87          20%[13;40H[23;63H46,86          20%[13;39H[23;63H46,85          20%[13;38H[23;63H46,84          20%[13;37H[23;63H46,83          20%[13;36H[23;63H46,82          20%[13;35H[23;63H46,81          20%[13;34H[23;63H46,80          20%[13;33H[m[1m[35m[46m{[m[1m[34m@payload[m[1m[35m[46m}[m[1m[35m"[m)[23;63H[1m[33m[40m46,79          20%[13;32H[m[1m[35m{[m[1m[34m@payload[m[1m[35m}"[m)[23;63H[1m[33m[40m46,78          20%[13;31H[m[13;14H[1m[35m[46m{[m[[14C[1m[35m[46m}[m[1m[35m#{[m[1m[34m@payload[m[1m[35m}"[m)[23;63H[1m[33m[40m46,77          20%[13;30H[m[13;14H[1m[35m{[m[[8C[46m([4C)[m[1m[35m}#{[m[1m[34m@payload[m[1m[35m}"[m)[23;63H[1m[33m[40m46,76          20%[13;29H[m([4C)[23;63H[1m[33m[40m46,75          20%[13;28H[23;63H46,74          20%[13;27H[23;63H46,73          20%[13;26H[23;63H46,72          20%[13;25H[m[46m([4C)[m[23;63H[1m[33m[40m46,71          20%[13;24H[m([4C)[23;63H[1m[33m[40m46,70          20%[13;23H[23;63H46,69          20%[13;22H[23;63H46,68          20%[13;21H[23;63H46,67          20%[13;20H[23;63H46,66          20%[13;19H[m[46m[[2C][m[23;63H[1m[33m[40m46,65          20%[13;18H[m[[2C][23;63H[1m[33m[40m46,64          20%[13;17H[23;63H46,63          20%[13;16H[m[46m[[2C][m[23;63H[1m[33m[40m46,62          20%[13;15H[m[1m[35m[46m{[m[[2C][11C[1m[35m[46m}[m[1m[35m#{[m[1m[34m@payload[m[1m[35m}"[m)[23;63H[1m[33m[40m46,61          20%[13;14H[m[1m[35m{[m[[14C[1m[35m}#{[m[1m[34m@payload[m[1m[35m}"[m)[23;63H[1m[33m[40m46,60          20%[13;13H[m[1m[35m[46m}[m[1m[35m#{[m[[23;63H[1m[33m[40m46,59          20%[13;12H[m[1m[35m}#{[m[[23;63H[1m[33m[40m46,58          20%[13;11H[23;63H46,57          20%[13;10H[23;63H46,56          20%[13;9H[23;63H46,55          20%[13;8H[23;63H46,54          20%[13;7H[23;63H46,53          20%[13;6H[23;63H46,52          20%[13;5H[m[1;4H[33m [m[31melse[m[2;6H [1m[34m@state[m = [1m[35m:done[m[3;4H[33m [m[31mend[m[4;4H[33m [m[31men[m [1m[35m:payload[m[5;4H[33m [m[1m[34m@payload[m << input_byte[6;4H[33m [m[31mif[m [1m[34m@payload[m.length >= [1m[34m@n[m[7;6H [1m[34m@state[m = [1m[35m:done[m[8;4H[33m [m[31mend[m[9;4H[33m [m[31mse[m[10;4H[33m [m[31mraise[m [1m[35m"BUG"[m[11;4H[33m [m[31md[m[12;5H [1m[34m@state[m == [1m[35m:done[m[13;5H[1m[34m@target[m.handle([1m[35m:proprietary_escape[m, [1m[35m"#[m[1m[35m[46m{[m[1m[34m@opcode[m[1m[35m[46m}[m[1m[35m#{[m[[1m[34m@n[m].pack([1m[35m"C*"[m)[1m[35m}#{[m[1m[34m@payload[m[1m[35m}[m[14;4H[33m [m[31mreturn[m [1m[35mtrue[m[15;4H[33m [m[31mse[m[16;4H[33m [m[31mreturn[m [1m[35mfalse[m[17;4H[33m [m[31md[m[21;4H[33m [m[1m[34mitialize[m(target)[22;4H[33m [m[1m[34me[m = [1m[35m1[m [1m[31m# DEBUG [m[30m[43mFIXME[m
+[1m[33m[40mmytest.rb [RO][48C46,51          20%[13;43H[m[1m[35m{[m[1m[34m@opcode[m[1m[35m}#{[m[[23;63H[1m[33m[40m46,50          20%[13;42H[23;63H46,49          20%[13;41H[23;63H46,48          20%[13;40H[23;63H46,47          20%[13;39H[23;63H46,46          20%[13;38H[23;63H46,45          20%[13;37H[23;63H46,44          20%[13;36H[23;63H46,43          20%[13;35H[23;63H46,42          20%[13;34H[23;63H46,41          20%[13;33H[23;63H46,40          20%[13;32H[23;63H46,39          20%[13;31H[23;63H46,38          20%[13;30H[23;63H46,37          20%[13;29H[23;63H46,36          20%[13;28H[23;63H46,35          20%[13;27H[23;63H46,34          20%[13;26H[23;63H46,33          20%[13;25H[23;63H46,32          20%[13;24H[23;63H46,31          20%[13;23H[23;63H46,30          20%[13;22H[23;63H46,29          20%[13;21H[23;63H46,28          20%[13;20H[m[46m([m[23;63H[1m[33m[40m46,27          20%[13;19H[m([23;63H[1m[33m[40m46,26          20%[13;18H[23;63H46,25          20%[13;17H[23;63H46,24          20%[13;16H[23;63H46,23          20%[13;15H[23;63H46,22          20%[13;14H[23;63H46,21          20%[13;13H[23;63H46,20          20%[13;12H[23;63H46,19          20%[13;11H[23;63H46,18          20%[13;10H[23;63H46,17          20%[13;9H[23;63H46,16          20%[13;8H[23;63H46,15          20%[13;7H[23;63H46,14          20%[13;6H[23;63H46,13          20%[13;5H[m[1;4H[33m [m    [7C [31melse[m[2;6H             [1m[34m@state[m = [1m[35m:done[m[3;4H[33m [m   [8C [31mend[m[4;4H[33m [m          [31mwhen[m [1m[35m:payload[m[5;4H[33m [m            [1m[34m@payload[m << input_byte[6;4H[33m [m            [31mif[m [1m[34m@payload[m.length >= [1m[34m@n[m[7;6H             [1m[34m@state[m = [1m[35m:done[m[8;4H[33m [m   [8C [31mend[m[9;4H[33m [m  [7C [31melse[m[10;4H[33m [m            [31mraise[m [1m[35m"BUG"[m[11;4H[33m [m [8C [31mend[m[12;5H          [31mif[m [1m[34m@state[m == [1m[35m:done[m[13;4H[33m [m            [1m[34m@target[m.handle([1m[35m:proprietary_escape[m, [1m[35m"#{[m[1m[34m@opcode[m[1m[35m}#{[m[[1m[34m@n[m].pack([1m[35m"C*"[m)[14;4H[33m [m            [31mreturn[m [1m[35mtrue[m[15;4H[33m [m  [7C [31melse[m[16;4H[33m [m            [31mreturn[m [1m[35mfalse[m[17;4H[33m [m [8C [31mend[m[18;12H [1m[35mend[m[19;10H [1m[35mend[m[21;4H[33m [m      [1m[35mdef[m [1m[34minitialize[m(target)[22;4H[33m [m        [1m[34m@byte[m = [1m[35m1[m [1m[31m# DEBUG [m[30m[43mFIXME[m
+[1m[33m[40mmytest.rb [RO][48C46,12          20%[13;16H[23;63H46,11          20%[13;15H[23;63H46,10          20%[13;14H[23;63H46,9           20%[13;13H[23;63H46,8           20%[13;12H[23;63H46,7           20%[13;11H[23;63H46,6           20%[13;10H[23;63H46,5           20%[13;9H[23;63H46,4           20%[13;8H[23;63H46,3           20%[13;7H[23;63H46,2           20%[13;6H[23;63H46,1           20%[13;5H[m[24;1H[K[24;1H:q:q[24;1H[K[24;1H[?1l>[2J[?47l8iMac-002:[94m~/components/scriptty/main[39m
+dwaynelitzenberger$ 
+iMac-002:[94m~/components/scriptty/main[39m
+dwaynelitzenberger$ exit
+
+Script done on Mon Mar  1 17:15:28 2010
