@@ -1,0 +1,51 @@
+# Terminal escapes for xterm
+# See:
+#   - ECMA-48 / ISO/IEC 6429 (formerly ANSI X3.64)
+#       http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-048.pdf
+#   - ECMA-6 7-bit Coded Character Set
+#       http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-006.pdf
+#   - "Xterm Control Sequences"
+#       http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
+#   - Wikipedia "ANSI Escape Code"
+#       http://en.wikipedia.org/wiki/ANSI_escape_code
+'\x07' => t_bell
+'\x08' => t_bs
+'\x0a' => t_new_line
+'\x0d' => t_carriage_return
+'\e' => {
+    '7' => t_save_cursor        # cross reference: ESC [ s
+    '8' => t_restore_cursor     # cross reference: ESC [ u
+    'c' => t_reset
+    'H' => t_tab_set
+    '=' => t_application_keypad
+    '>' => t_normal_keypad
+    '[' => t_parse_csi => {      # ANSI CSI escape sequence - ESC [ ...
+        '?' => t_parse_csi => {  # DEC escape sequences - ESC [ ? ...
+            'h' => t_dec_private_mode_set
+            'l' => t_dec_private_mode_reset
+        }
+        '>' => t_parse_csi => {  # ESC [ > ...
+            'c' => t_send_device_attributes_secondary   # Secondary DA
+        }
+        'A' => t_cursor_up
+        'B' => t_cursor_down
+        'C' => t_cursor_right
+        'D' => t_cursor_left
+        'H' => t_cursor_position
+        'J' => t_erase_in_display
+        'K' => t_erase_in_line
+        'M' => t_delete_lines
+        'P' => t_delete_characters
+        'S' => t_scroll_up
+        'T' => t_scroll_down
+        'c' => t_send_device_attributes_primary # Primary DA
+        'g' => t_tab_clear
+        'h' => t_set_mode
+        'l' => t_reset_mode
+        'm' => t_sgr     # "select graphics rendition" - colour, bold, underline, etc.
+        'r' => t_set_scrolling_region
+        's' => t_save_cursor        # cross reference: ESC 7
+        'u' => t_restore_cursor     # cross reference: ESC 8
+    }
+}
+[\x20-\x7e] => t_printable
