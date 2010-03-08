@@ -43,6 +43,32 @@ class FSMTest < Test::Unit::TestCase
     assert_equal ['x', 'y'], fsm.input_sequence
   end
 
+  def test_other
+    result = []
+    fsm = ScripTTY::Util::FSM.new(:definition => <<-EOF) { |event, fsm| result << event }
+      'a' => eh
+      'x' => {
+        'y' => ex_why
+        * => ex_other
+      }
+    EOF
+
+    fsm.process("a")
+    assert_equal 'a', fsm.input
+    assert_equal ['a'], fsm.input_sequence
+
+    fsm.process("x")
+    assert_equal 'x', fsm.input
+    assert_equal ['x'], fsm.input_sequence
+
+    assert_nothing_raised do
+      fsm.process("z")
+    end
+    assert_equal 'z', fsm.input
+    assert_equal ['x', 'z'], fsm.input_sequence
+    assert_equal [:eh, :ex_other], result
+  end
+
   def test_empty_state
     fsm = ScripTTY::Util::FSM.new(:definition => <<-EOF)
       'x' => {

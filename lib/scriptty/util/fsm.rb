@@ -131,7 +131,7 @@ module ScripTTY # :nodoc:
 
         # Look up for a state transition for the specified input
         t = @state_transitions[@state][input]
-        t ||= @state_transitions[@state][:any]
+        t ||= @state_transitions[@state][:other]
         raise NoMatch.new("No matching transition for input_sequence=#{input_sequence.inspect} (state=#{state.inspect})", input_sequence, state) unless t
 
         # Set next_state and invoke the callback, if any is specified for this state transition.
