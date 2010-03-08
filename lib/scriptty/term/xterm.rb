@@ -352,6 +352,16 @@ module ScripTTY # :nodoc:
           true
         end
 
+        # Insert the specified number of lines characters at the cursor position.
+        # The characters to the below the cursor are scrolled down, and blank
+        # lines are inserted in their place.
+        # Return true.
+        def insert_blank_lines!(count=1)
+          @glyphs.scroll_down_region(@cursor.row, 0, @height-1, @width-1, count)
+          @attrs.scroll_down_region(@cursor.row, 0, @height-1, @width-1, count)
+          true
+        end
+
       private
 
         # Set the vertical scrolling region.
@@ -542,6 +552,12 @@ module ScripTTY # :nodoc:
 
         # ESC [ > Ps c
         def t_send_device_attributes_secondary(fsm) end   # XXX TODO - respond with ESC [ ? ...
+
+        # ESC [ Ps L
+        def t_insert_lines(fsm)
+          count = parse_csi_params(fsm.input_sequence)[0] || 1
+          insert_blank_lines!(count)
+        end
 
         # ESC [ Ps M
         def t_delete_lines(fsm)

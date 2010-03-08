@@ -34,6 +34,7 @@
         'H' => t_cursor_position
         'J' => t_erase_in_display
         'K' => t_erase_in_line
+        'L' => t_insert_lines
         'M' => t_delete_lines
         'P' => t_delete_characters
         'S' => t_scroll_up
