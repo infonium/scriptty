@@ -31,6 +31,7 @@ module ScripTTY
       def initialize(argv)
         @client_connection = nil
         @server_connection = nil
+        @output_file = nil
         @options = parse_options(argv)
         @client_password = ""   # TODO SECURITY FIXME
         @console_password = ""   # TODO SECURITY FIXME
@@ -42,8 +43,6 @@ module ScripTTY
       end
 
       def main
-#        @client_connection = nil
-#        @server_connection = nil
         @net = ScripTTY::Net::EventLoop.new
         @net.on_accept(*@options[:console_addrs]) do |conn|
           p = PasswordPrompt.new(conn, "Console password: ")
@@ -65,7 +64,7 @@ module ScripTTY
             else
               @client_connection = conn
               @client_connection.on_receive_bytes { |bytes| handle_client_receive_bytes(bytes) }
-              @client_connection.on_close { handle_client_close ; @client_connection = nil }
+              @client_connection.on_close { handle_client_close ; @client_connection = nil; check_close_output_file }
               handle_client_connected
             end
           }
@@ -75,34 +74,47 @@ module ScripTTY
 
       private
 
+        def check_close_output_file
+          if !@client_connection and !@server_connection and @output_file
+            @output_file.close
+            @output_file = nil
+          end
+        end
+
         def handle_client_connected
           connect_to_server
         end
 
         def handle_server_connected
+          @output_file = OutputFile.new(File.join(@options[:output_dir], Time.now.strftime("%Y-%m-%dT%H_%M_%S") + ".txt"))
           @term = ScripTTY::Term::XTerm.new
           @term.on_unknown_sequence do |sequence|
+            @output_file.info("Unknown escape sequence", sequence) if @output_file
             puts "Unknown escape sequence: #{sequence.inspect}" # DEBUG FIXME
           end
         end
 
         def handle_client_receive_bytes(bytes)
           return unless @server_connection    # Ignore bytes received from client until server is connected.
+          @output_file.from_client(bytes) if @output_file
           @server_connection.write(bytes)
         end
 
         def handle_server_receive_bytes(bytes)
           return unless @client_connection    # Ignore bytes received from client until server is connected.
+          @output_file.from_server(bytes) if @output_file
           @client_connection.write(bytes)
           @term.feed_bytes(bytes)
           @attached_consoles.each { |c| c.refresh! }
         end
 
         def handle_client_close
+          @output_file.client_close("Client connection closed") if @output_file
           @server_connection.close
         end
 
         def handle_server_close
+          @output_file.client_close("Server connection closed") if @output_file
           @client_connection.close
           @term = nil
         end
@@ -111,7 +123,7 @@ module ScripTTY
           @net.on_connect(@options[:connect_addr]) do |server|
             @server_connection = server
             @server_connection.on_receive_bytes { |bytes| handle_server_receive_bytes(bytes) }
-            @server_connection.on_close { handle_server_close; @server_connection = nil }
+            @server_connection.on_close { handle_server_close; @server_connection = nil; check_close_output_file }
             handle_server_connected
           end
         end
@@ -135,6 +147,10 @@ module ScripTTY
               addr = parse_hostport(optarg, :allow_empty_host => true, :allow_zero_port => true)
               options[:console_addrs] ||= []
               options[:console_addrs] << addr
+            end
+            opts.on("-O", "--output-dir DIRECTORY", "Write capture files to DIRECTORY") do |optarg|
+              raise ArgumentError.new("--output-dir may only be specified once") if options[:output_dir]
+              options[:output_dir] = optarg
             end
           end
           opts.parse!(args)
@@ -163,3 +179,4 @@ end
 
 require 'scriptty/apps/capture_app/password_prompt'
 require 'scriptty/apps/capture_app/console'
+require 'scriptty/apps/capture_app/output_file'
