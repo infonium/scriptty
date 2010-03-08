@@ -44,6 +44,68 @@ class XtermTest < Test::Unit::TestCase
     assert_equal 5, s.height
   end
 
+  def test_unknown_sequence_raises_nomatch_by_default
+    before =  [ "aaaaaaaaaa",
+                "bbbbbbbbbb",
+                "cccccccccc",
+                "dddddddddd",
+                "eeeeeeeeee" ]
+
+    after =   [ "FOOaaaaaaa",
+                "bbbbbbbbbb",
+                "cccccccccc",
+                "dddddddddd",
+                "eeeeeeeeee" ]
+
+    screen_modify_test(before, after) do |s|
+      assert_raise ScripTTY::Util::FSM::NoMatch do
+        s.feed_bytes("\e[\e")  # bogus escape sequence ESC [ ESC
+      end
+      s.feed_bytes("FOO")
+    end
+  end
+
+  def test_unknown_sequence_ignore
+    before =  [ "aaaaaaaaaa",
+                "bbbbbbbbbb",
+                "cccccccccc",
+                "dddddddddd",
+                "eeeeeeeeee" ]
+
+    after =   [ "FOOaaaaaaa",
+                "bbbbbbbbbb",
+                "cccccccccc",
+                "dddddddddd",
+                "eeeeeeeeee" ]
+
+    screen_modify_test(before, after) do |s|
+      s.on_unknown_sequence :ignore
+      s.feed_bytes("\e[\eFOO")  # bogus escape sequence ESC [ ESC
+    end
+  end
+
+  def test_unknown_sequence_proc
+    before =  [ "aaaaaaaaaa",
+                "bbbbbbbbbb",
+                "cccccccccc",
+                "dddddddddd",
+                "eeeeeeeeee" ]
+
+    after =   [ "[BOGO]FOOa",
+                "bbbbbbbbbb",
+                "cccccccccc",
+                "dddddddddd",
+                "eeeeeeeeee" ]
+
+    screen_modify_test(before, after) do |s|
+      s.on_unknown_sequence do |seq|
+        assert_equal "\e[\e", seq
+        s.feed_bytes "[BOGO]"   # the state machine should already be reset, so we should be able to feed alternative bytes here.
+      end
+      s.feed_bytes("\e[\eFOO")  # bogus escape sequence ESC [ ESC
+    end
+  end
+
   def test_cursor_position
     s = ScripTTY::Term::XTerm.new(5, 10)
 
