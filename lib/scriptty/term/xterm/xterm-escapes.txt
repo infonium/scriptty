@@ -8,6 +8,7 @@
 #       http://invisible-island.net/xterm/ctlseqs/ctlseqs.html
 #   - Wikipedia "ANSI Escape Code"
 #       http://en.wikipedia.org/wiki/ANSI_escape_code
+'\x00' => t_nul
 '\x07' => t_bell
 '\x08' => t_bs
 '\x0a' => t_new_line
@@ -47,6 +48,26 @@
         'r' => t_set_scrolling_region
         's' => t_save_cursor        # cross reference: ESC 7
         'u' => t_restore_cursor     # cross reference: ESC 8
+    }
+    ']' => t_parse_osc => { # OSC - "Operating system command"
+        '\007' => t_osc_set_text_params
+    }
+}
+'\377' => {
+    '\372' => t_parse_telnet_sb => {
+        * => t_telnet_subnegotiation
+    }
+    '\373' => {
+        * => t_telnet_will
+    }
+    '\374' => {
+        * => t_telnet_wont
+    }
+    '\375' => {
+        * => t_telnet_do
+    }
+    '\376' => {
+        * => t_telnet_dont
     }
 }
 [\x20-\x7e] => t_printable

@@ -389,6 +389,9 @@ module ScripTTY # :nodoc:
           cursor_forward!
         end
 
+        # NUL character
+        def t_nul(fsm) end # TODO
+
         # Beep
         def t_bell(fsm) end # TODO
 
@@ -418,6 +421,20 @@ module ScripTTY # :nodoc:
         # ESC [
         def t_parse_csi(fsm)
           fsm.redirect = lambda {|fsm| fsm.input =~ /[\d;]/}
+        end
+
+        # Operating system controls
+        # ESC ] Ps ; Pt BEL
+        # "ESC ]", followed by a number and a semicolon, followed by printable text, followed by a non-printable character
+        def t_parse_osc(fsm)
+          fsm.redirect = lambda {|fsm| fsm.input =~ /[\x20-\x7e]/}
+        end
+
+        # IAC SB ... SE
+        def t_parse_telnet_sb(fsm)
+          # limit subnegotiation to 100 chars
+          count = 0
+          fsm.redirect = lambda {|fsm| count += 1; count < 100 && fsm.input_sequence[-2..-1] != ["\377", "\360"]}
         end
 
         # ESC [ Ps J
@@ -582,6 +599,14 @@ module ScripTTY # :nodoc:
 
         # ESC >
         def t_normal_keypad(fsm) end   # TODO
+
+        def t_telnet_will(fsm) end  # TODO
+        def t_telnet_wont(fsm) end  # TODO
+        def t_telnet_do(fsm) end  # TODO
+        def t_telnet_dont(fsm) end  # TODO
+        def t_telnet_subnegotiation(fsm) end  # TODO
+
+        def t_osc_set_text_params(fsm) end # TODO - used for setting window title, etc.
 
         # ESC [ ... h
         def t_set_mode(fsm)
