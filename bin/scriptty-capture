@@ -1,0 +1,5 @@
+#!/usr/bin/env jruby
+
+require 'scriptty/apps/capture_app'
+puts "\007Starting" # DEBUG FIXME
+ScripTTY::Apps::CaptureApp.new(ARGV).main
