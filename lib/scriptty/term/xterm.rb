@@ -147,11 +147,6 @@ module ScripTTY # :nodoc:
         a
       end
 
-      # XXX TODO FIXME - remove this
-      def scrolling_region=(v)
-        @scrolling_region = v
-      end
-
       protected
 
         # Reset to the initial state.  Return true.
@@ -314,6 +309,7 @@ module ScripTTY # :nodoc:
         def erase_line!
           @glyphs.replace_at(@cursor.row, 0, " "*@width)
           @attrs.replace_at(@cursor.row, 0, " "*@width)
+          true
         end
 
         # Erase the window.  Return true.
