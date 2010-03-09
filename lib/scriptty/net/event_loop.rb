@@ -59,6 +59,7 @@ module ScripTTY
           connect_address = parse_address(address)
           chan = SocketChannel.open
           chan.configureBlocking(false)
+          chan.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
           chan.register(@selector, SelectionKey::OP_CONNECT)
           selection_key = chan.keyFor(@selector)   # SelectionKey object
           selection_key.attach({:on_connect => callback})
@@ -96,6 +97,7 @@ module ScripTTY
             if k.valid? and k.acceptable?
               socket_channel = k.channel.accept
               socket_channel.configureBlocking(false)
+              socket_channel.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
               if att[:on_accept]
                 cw = ConnectionWrapper.new(self, socket_channel)
                 att[:on_accept].call(cw)
