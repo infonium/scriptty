@@ -47,7 +47,7 @@ module ScripTTY
               @done = true
               @conn.write(IAC_DO_ECHO + "\r\n") if @password_buffer =~ /#{Regexp.escape(IAC_DO_ECHO)}|#{Regexp.escape(IAC_WILL_ECHO)}/ # echo on, send newline
               password = @password_buffer
-              password.gsub!(/\377[\373-\376]\001/, "")   # Strip IAC DO/DONT/WILL/WONT ECHO from password
+              password.gsub!(/\377[\373-\376]./m, "")   # Strip IAC DO/DONT/WILL/WONT option from password
               password.chomp!   # strip trailing newline
               if @authenticate_proc.call(password)
                 # success
