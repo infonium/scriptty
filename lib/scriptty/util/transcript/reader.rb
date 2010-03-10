@@ -51,7 +51,7 @@ module ScripTTY
 
         def parse_line(line)
           @current_line += 1
-          unless line =~ /^\[([\d\.]+)\] (\S+)( "([^"]*)")*$/
+          unless line =~ /^\[([\d\.]+)\] (\S+)((?: "[^"]*")*)$/
             raise ArgumentError.new("line #{@current_line}: Unable to parse basic structure")
           end
           timestamp, op, raw_args = [$1, $2, $3]
