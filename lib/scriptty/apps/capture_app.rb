@@ -18,14 +18,11 @@
 
 require 'optparse'
 require 'scriptty/net/event_loop'
-require 'scriptty/term/xterm'
+require 'scriptty/term'
 
 module ScripTTY
   module Apps
     class CaptureApp
-#      attr_accessor :client_connection
-#      attr_accessor :server_connection
-#      attr_reader :net
       attr_reader :term
 
       def initialize(argv)
@@ -86,8 +83,8 @@ module ScripTTY
         end
 
         def handle_server_connected
-          @output_file = OutputFile.new(File.join(@options[:output_dir], Time.now.strftime("%Y-%m-%dT%H_%M_%S") + ".txt"))
-          @term = ScripTTY::Term::XTerm.new
+          @output_file = OutputFile.new(File.join(@options[:output_dir], Time.now.strftime("%Y-%m-%dT%H_%M_%S") + ".txt")) if @options[:output_dir]
+          @term = ScripTTY::Term.new(@options[:term])
           @term.on_unknown_sequence do |sequence|
             @output_file.info("Unknown escape sequence", sequence) if @output_file
             puts "Unknown escape sequence: #{sequence.inspect}" # DEBUG FIXME
@@ -130,7 +127,7 @@ module ScripTTY
 
         def parse_options(argv)
           args = argv.dup
-          options = {}
+          options = {:term => 'xterm'}
           opts = OptionParser.new do |opts|
             opts.banner = "Usage: #{opts.program_name} [options]"
             opts.separator "Stream capture application"
@@ -147,6 +144,10 @@ module ScripTTY
               addr = parse_hostport(optarg, :allow_empty_host => true, :allow_zero_port => true)
               options[:console_addrs] ||= []
               options[:console_addrs] << addr
+            end
+            opts.on("-t", "--term NAME", "Terminal to emulate") do |optarg|
+              raise ArgumentError.new("Unsupported terminal #{optarg.inspect}") unless ScripTTY::Term::TERMINAL_TYPES.include?(optarg)
+              options[:term] = optarg
             end
             opts.on("-O", "--output-dir DIRECTORY", "Write capture files to DIRECTORY") do |optarg|
               raise ArgumentError.new("--output-dir may only be specified once") if options[:output_dir]
