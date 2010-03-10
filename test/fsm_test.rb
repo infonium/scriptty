@@ -300,4 +300,20 @@ class FSMTest < Test::Unit::TestCase
     assert_equal 1, fsm.next_state
     assert_nil fsm.redirect
   end
+
+  # Test the FSM#fire_event method
+  def test_fire_event
+    result = []
+    fsm = ScripTTY::Util::FSM.new(:definition => <<-EOF) { |event, fsm| result << event; fsm.fire_event(:xy) if event == :ex_why }
+      'a' => eh
+      'x' => {
+        'y' => ex_why
+      }
+    EOF
+
+    fsm.process("a")
+    fsm.process("x")
+    fsm.process("y")
+    assert_equal [:eh, :ex_why, :xy], result
+  end
 end

@@ -98,6 +98,11 @@ module ScripTTY # :nodoc:
         nil
       end
 
+      # Invoke the callback for the specified event.
+      def fire_event(event)
+        @callback.__send__(@callback_method, event.to_sym, self) if @callback
+      end
+
       # Process the specified input.
       #
       # If there is no matching entry in the state transition table,
@@ -137,9 +142,7 @@ module ScripTTY # :nodoc:
 
         # Set next_state and invoke the callback, if any is specified for this state transition.
         @next_state = t[:next_state]
-        if @callback and t[:event]
-          @callback.__send__(@callback_method, t[:event], self)
-        end
+        fire_event(t[:event]) if t[:event]
 
         # Return true
         true
