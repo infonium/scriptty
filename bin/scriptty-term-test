@@ -1,0 +1,4 @@
+#!/usr/bin/env jruby
+
+require 'scriptty/apps/term_test_app'
+ScripTTY::Apps::TermTestApp.new(ARGV).main
