@@ -174,6 +174,44 @@ class FSMTest < Test::Unit::TestCase
     assert_equal [["\e", "[", "3", "3", ";", "4", "2", "m"], :five], cb.result
   end
 
+  # Regression test:  If fsm.redirect was used with :next_state => 1,
+  # fsm.input_sequence would only contain the current input, rather than
+  # the whole sequence.  This tests the fix.
+  def test_final_callback_with_redirect
+    callback_class = Class.new do
+      attr_accessor :result
+      def handle_a(f)
+        f.redirect = :redirected
+      end
+      def redirected(f)
+        case f.input_sequence
+        when ['a', 'p', 'p', 'l', 'e']
+          f.redirect = nil
+          apple(f)
+        when ['a', 'c', 'r', 'o', 'b', 'a', 't']
+          f.redirect = nil
+          acrobat(f)
+        end
+        true
+      end
+      def apple(f)
+        @result ||= []
+        @result << :apple
+      end
+      def acrobat(f)
+        @result ||= []
+        @result << :acrobat
+      end
+    end
+    cb = callback_class.new
+    fsm = ScripTTY::Util::FSM.new(:callback => cb, :callback_method => :send, :definition => <<-EOF)
+      'a' => handle_a
+    EOF
+    "apple".split("").each {|c| fsm.process(c)}
+    "acrobat".split("").each {|c| fsm.process(c)}
+    assert_equal [:apple, :acrobat], cb.result
+  end
+
   def test_intermediate_callback_with_redirect_symbol
     callback_class = Class.new do
       attr_accessor :result

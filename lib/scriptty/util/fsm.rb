@@ -106,8 +106,9 @@ module ScripTTY # :nodoc:
         # Switch to @next_state
         @state = @next_state
 
-        # Add the input to @input_sequence
-        if @state == 1
+        # Reset @input_sequence if we are at the initial state.  Otherwise,
+        # append the current input to @input_sequence.
+        if @state == 1 && !@redirect
           @input_sequence = [input]
         else
           @input_sequence << input
