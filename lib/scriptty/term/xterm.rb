@@ -535,7 +535,7 @@ module ScripTTY # :nodoc:
           count.times { cursor_left! }
         end
 
-        # ESC [ Ps ; Ps h
+        # ESC [ Ps ; Ps H
         def t_cursor_position(fsm)
           row, column = parse_csi_params(fsm.input_sequence)
           row ||= 0; column ||= 0     # missing params set to 0
