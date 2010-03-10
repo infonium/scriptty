@@ -1,4 +1,4 @@
-# = Capture app - output file format handler
+# = Transcript writer
 # Copyright (C) 2010  Infonium Inc.
 #
 # This file is part of ScripTTY.
@@ -16,20 +16,17 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with ScripTTY.  If not, see <http://www.gnu.org/licenses/>.
 
-require 'scriptty/apps/capture_app'
-
 module ScripTTY
-  module Apps
-    class CaptureApp  # reopen
-      class OutputFile
-        def initialize(path)
-          @file = File.open(path, "w")
+  module Util
+    module Transcript
+      class Writer
+        def initialize(io)
+          @io = io
           @start_time = Time.now
         end
 
         def close
-          @file.flush
-          @file.close
+          @io.close
         end
 
         # Log bytes from the client
@@ -42,12 +39,22 @@ module ScripTTY
           write_event("S", bytes)
         end
 
+        # Log event from the client (i.e. bytes parsed into an escape sequence, with an event fired)
+        def client_parsed(event, input_sequence)
+          write_event("Cp", event.to_s, input_sequence.to_s)
+        end
+
+        # Log event from the server (i.e. bytes parsed into an escape sequence, with an event fired)
+        def server_parsed(event, input_sequence)
+          write_event("Sp", event.to_s, input_sequence.to_s)
+        end
+
         # Log server connection close
         def server_close(message)
           write_event("Sx", message)
         end
 
-        # Log server connection close
+        # Log client connection close
         def client_close(message)
           write_event("Cx", message)
         end
@@ -62,8 +69,8 @@ module ScripTTY
           def write_event(type, *args)
             t = Time.now - @start_time
             encoded_args = args.map{|a| encode_string(a)}.join(" ")
-            @file.puts sprintf("[%.03f] %s %s", t, type, encoded_args)
-            @file.flush
+            @io.write sprintf("[%.03f] %s %s", t, type, encoded_args) + "\n"
+            @io.flush if @io.respond_to?(:flush)
             nil
           end
 
@@ -73,7 +80,7 @@ module ScripTTY
                 sprintf("\\%03o", c)
               }.join
             }
-            return '"' + escaped + '"'
+            '"' + escaped + '"'
           end
       end
     end

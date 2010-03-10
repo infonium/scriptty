@@ -18,6 +18,7 @@
 
 require 'optparse'
 require 'scriptty/term'
+require 'scriptty/util/transcript/reader'
 
 module ScripTTY
   module Apps
@@ -45,6 +46,7 @@ module ScripTTY
           File.open(inp[:path], "rb") do |input_file|
             time0 = Time.now
             timestamp0 = timestamp = nil
+            reader = Util::Transcript::Reader.new
             until input_file.eof?
               # Read a chunk of the input file
               case inp[:format]
@@ -52,10 +54,9 @@ module ScripTTY
                 c = input_file.read(1)
                 @term.feed_byte(c)
               when :capture
-                line = input_file.readline
-                next unless line =~ /^\[([\d\.]+)\] S "(.*)"/
-                timestamp = $1.to_f
-                bytes = $2.gsub(/\\[0-7][0-7][0-7]/) { |m| [m[1..-1].to_i(8)].pack("C*") }
+                timestamp, type, args = reader.parse_line(input_file.readline)
+                next unless type == :from_server
+                bytes = args[0]
 
                 # Wait until the time specified in the timestamp passes
                 timestamp0 = timestamp unless timestamp0   # treat the first timestamp as time 0

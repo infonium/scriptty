@@ -18,6 +18,7 @@
 
 require 'optparse'
 require 'scriptty/net/event_loop'
+require 'scriptty/util/transcript/writer'
 require 'scriptty/term'
 
 module ScripTTY
@@ -83,7 +84,11 @@ module ScripTTY
         end
 
         def handle_server_connected
-          @output_file = OutputFile.new(File.join(@options[:output_dir], Time.now.strftime("%Y-%m-%dT%H_%M_%S") + ".txt")) if @options[:output_dir]
+          if @options[:output_dir]
+            output_file_path = File.join(@options[:output_dir], Time.now.strftime("%Y-%m-%dT%H_%M_%S") + ".txt")
+            output_file = File.open(output_file_path, "w")
+            @output_file = Util::Transcript::Writer.new(output_file)
+          end
           @term = ScripTTY::Term.new(@options[:term])
           @term.on_unknown_sequence do |sequence|
             @output_file.info("Unknown escape sequence", sequence) if @output_file
@@ -180,4 +185,3 @@ end
 
 require 'scriptty/apps/capture_app/password_prompt'
 require 'scriptty/apps/capture_app/console'
-require 'scriptty/apps/capture_app/output_file'
