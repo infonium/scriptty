@@ -19,6 +19,7 @@
 raise LoadError.new("This file only works in JRuby") unless defined?(Java)
 
 require 'java'
+require 'thread'
 
 module ScripTTY
   module Net
@@ -265,32 +266,4 @@ module ScripTTY
       end
     end
   end
-end
-
-if __FILE__ == $0
-  ml = ScripTTY::Net::EventLoop.new
-  ml.on_accept(["::1", 5556], ["127.0.0.1", 5556]) do |conn|
-    puts "server: connection received from #{conn.remote_address.inspect}"
-    conn.on_receive_bytes do |bytes|
-      puts "server: received bytes: #{bytes.inspect}"
-      puts "server: writing uppercase"
-      conn.write(bytes.upcase) { puts "server: write done" ; conn.close }
-    end
-    conn.on_close do
-      puts "server: connection closed"
-    end
-  end
-  ml.on_connect(["127.0.0.1", 5556]) do |conn|
-    puts "client: connection received"
-    conn.on_receive_bytes do |bytes|
-      puts "client: received bytes: #{bytes.inspect}"
-    end
-    conn.on_close do
-      puts "client: connection closed"
-    end
-    puts "client: writing hello"
-    conn.write("Hello world!") { puts "client: done writing hello" }
-  end
-  puts "ready"
-  ml.main
 end
