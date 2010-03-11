@@ -42,7 +42,7 @@ module ScripTTY
       def main
         @output_file = Util::Transcript::Writer.new(File.open(@options[:output], "w")) if @options[:output]
         @net = ScripTTY::Net::EventLoop.new
-        @net.on_accept(@options[:console_addrs], :multiple => true) do |conn|
+        @net.on_accept(@options[:console_addrs] || [], :multiple => true) do |conn|
           p = PasswordPrompt.new(conn, "Console password: ")
           p.authenticate { |password| password == @console_password }
           p.on_fail { conn.write("Authentiation failed.\r\n") { conn.close } }
