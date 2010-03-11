@@ -31,7 +31,6 @@ module ScripTTY
         @server_connection = nil
         @output_file = nil
         @options = parse_options(argv)
-        @client_password = ""   # TODO SECURITY FIXME
         @console_password = ""   # TODO SECURITY FIXME
         @attached_consoles = []
       end
@@ -52,20 +51,10 @@ module ScripTTY
           }
         end
         @net.on_accept(@options[:listen_addrs], :multiple => true) do |conn|
-          # NOTE: We don't set @client_connection and call handle_client_connected until the client is authenticated.
-          p = PasswordPrompt.new(conn, "Enter password: ")
-          p.authenticate { |password| password == @client_password }
-          p.on_fail { conn.write("Authentiation failed.\r\n") { conn.close } }
-          p.on_success {
-            if @authenticated_client_connection
-              conn.write("Already connected.\r\n") { conn.close }
-            else
-              @client_connection = conn
-              @client_connection.on_receive_bytes { |bytes| handle_client_receive_bytes(bytes) }
-              @client_connection.on_close { handle_client_close ; @client_connection = nil; check_close_output_file }
-              handle_client_connected
-            end
-          }
+          @client_connection = conn
+          @client_connection.on_receive_bytes { |bytes| handle_client_receive_bytes(bytes) }
+          @client_connection.on_close { handle_client_close ; @client_connection = nil; check_close_output_file }
+          handle_client_connected
         end
         @net.main
       end
