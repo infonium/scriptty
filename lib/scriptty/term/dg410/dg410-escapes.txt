@@ -1,0 +1,82 @@
+# Terminal escapes for dg410
+#'\001' => t_print_form
+#'\002' => t_stx
+'\003' => t_blink_enable
+'\004' => t_blink_disable
+#'\005' => t_read_window_address
+'\006' => t_proprietary_ack
+'\007' => t_bell
+'\010' => t_window_home
+#'\011' => t_tab
+'\012' => t_new_line
+'\013' => t_erase_end_of_line
+'\014' => t_erase_window
+'\015' => t_carriage_return
+'\016' => t_blink_on
+'\017' => t_blink_off
+'\020' => {
+    * => {
+        * => t_write_window_address
+    }
+}
+'\021' => t_print_window
+'\022' => t_roll_enable
+'\023' => t_roll_disable
+'\024' => t_underscore_on
+'\025' => t_underscore_off
+#'\026' => t_syn    # seems to always be followed by some data, then \002 # XXX TODO
+'\027' => t_cursor_up
+'\030' => t_cursor_right
+'\031' => t_cursor_left
+'\032' => t_cursor_down
+'\033' => {
+#    '\x20' => {
+#        'i' => t_esc_sp_i
+#    }
+#    '*' => {
+#        's' => t_esc_asterisk_s
+#    }
+    ']' => {     # OSC? -- Nope XXX TODO
+        [01] => {
+            'M' => t_osc_m    # XXX TODO
+            'K' => t_osc_k    # XXX TODO
+        }
+    }
+}
+'\034' => t_dim_on
+'\035' => t_dim_off
+'\036' => {
+#    'C' => t_read_model_id
+    'D' => t_reverse_video_on
+    'E' => t_reverse_video_off
+    'F' => {
+        'A' => t_reset
+        'F' => t_erase_unprotected
+#        'I' => t_delete_line
+#        'Q' => {
+#            * => t_set_cursor_type
+#        }
+#        '\\' => t_delete_between_margins
+#        '@' => t_select_ansi_mode
+    }
+#    'K' => t_delete_character
+    '~' => t_parse_proprietary_escape
+}
+#'\377' => {
+#    '\372' => t_parse_telnet_sb => {
+#        * => t_telnet_subnegotiation
+#    }
+#    '\373' => {
+#        * => t_telnet_will
+#    }
+#    '\374' => {
+#        * => t_telnet_wont
+#    }
+#    '\375' => {
+#        * => t_telnet_do
+#    }
+#    '\376' => {
+#        * => t_telnet_dont
+#    }
+#}
+[\x20-\x7e] => t_printable

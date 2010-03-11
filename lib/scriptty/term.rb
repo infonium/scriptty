@@ -19,7 +19,7 @@
 module ScripTTY
   module Term
     TERMINAL_TYPES = {
-      #"dg410" => {:require => "scriptty/term/dg410", :class_name => "::ScripTTY::Term::DG410"},
+      "dg410" => {:require => "scriptty/term/dg410", :class_name => "::ScripTTY::Term::DG410"},
       "xterm" => {:require => "scriptty/term/xterm", :class_name => "::ScripTTY::Term::XTerm"},
     }
 
