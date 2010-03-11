@@ -45,13 +45,13 @@ module ScripTTY
         end
 
         # Log event from the client (i.e. bytes parsed into an escape sequence, with an event fired)
-        def client_parsed(event, input_sequence)
-          write_event("Cp", event.to_s, input_sequence.to_s)
+        def client_parsed(event, bytes)
+          write_event("Cp", event.to_s, bytes)
         end
 
         # Log event from the server (i.e. bytes parsed into an escape sequence, with an event fired)
-        def server_parsed(event, input_sequence)
-          write_event("Sp", event.to_s, input_sequence.to_s)
+        def server_parsed(event, bytes)
+          write_event("Sp", event.to_s, bytes)
         end
 
         # Log server connection close
