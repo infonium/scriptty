@@ -21,18 +21,6 @@ require 'scriptty/term/xterm'
 
 class XtermTest < Test::Unit::TestCase
 
-  # Monkey-patch the class so that we can call protected methods that end in an exclamation mark.
-  class ::ScripTTY::Term::XTerm # reopen
-    def method_missing(s, *args)
-      # XXX - This will have to change in Ruby 1.9, where protected_methods returns symbols instead of strings.
-      if "#{s}" =~ /!\Z/ and protected_methods.include?("#{s}")
-        send(s, *args)
-      else
-        super
-      end
-    end
-  end
-
   def test_initial_cursor_position
     s = ScripTTY::Term::XTerm.new(5, 10)
     assert_equal [0,0], s.cursor_pos
@@ -282,7 +270,7 @@ class XtermTest < Test::Unit::TestCase
     end
   end
 
-  def test_put_char
+  def test_printable
     before =  [" "*10]*5
     after =   [ "Hello!    ",
                 "          ",
@@ -291,13 +279,8 @@ class XtermTest < Test::Unit::TestCase
                 "          " ]
 
     screen_modify_test(before, after) do |s|
-      s.put_char!("x") # cursor not moved forward
-      s.put_char!("H", true)
-      s.put_char!("e", true)
-      s.put_char!("l", true)
-      s.put_char!("l", true)
-      s.put_char!("o", true)
-      s.put_char!("!")
+      s.feed_bytes("Hello!")
+      assert_equal [0,6], s.cursor_pos
     end
   end
 
