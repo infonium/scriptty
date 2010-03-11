@@ -42,7 +42,7 @@ module ScripTTY
 
       def main
         @net = ScripTTY::Net::EventLoop.new
-        @net.on_accept(*@options[:console_addrs]) do |conn|
+        @net.on_accept(@options[:console_addrs], :multiple => true) do |conn|
           p = PasswordPrompt.new(conn, "Console password: ")
           p.authenticate { |password| password == @console_password }
           p.on_fail { conn.write("Authentiation failed.\r\n") { conn.close } }
@@ -51,7 +51,7 @@ module ScripTTY
             @attached_consoles.each { |c| c.refresh! }
           }
         end
-        @net.on_accept(*@options[:listen_addrs]) do |conn|
+        @net.on_accept(@options[:listen_addrs], :multiple => true) do |conn|
           # NOTE: We don't set @client_connection and call handle_client_connected until the client is authenticated.
           p = PasswordPrompt.new(conn, "Enter password: ")
           p.authenticate { |password| password == @client_password }

@@ -16,6 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with ScripTTY.  If not, see <http://www.gnu.org/licenses/>.
 
+raise LoadError.new("This file only works in JRuby") unless defined?(Java)
+
 require 'java'
 
 module ScripTTY
@@ -31,46 +33,69 @@ module ScripTTY
       def initialize
         @selector = Selector.open
         @read_buffer = ByteBuffer.allocate(4096)
+        @exit_mutex = Mutex.new   # protects
+        @exit_requested = false
       end
 
-      # Listen for TCP connections on a particular address (or list of addresses),
+      # Instruct the main loop to exit.  Returns immediately.
+      #
+      # - This method may safely be called from any thread.
+      # - This method may safely be invoked multiple times.
+      def exit
+        @exit_mutex.synchronize { @exit_requested = true }
+        @selector.wakeup
+        nil
+      end
+
+      # Listen for TCP connections on a particular address (given as [host, port]),
       # and invoke the given block when a connection is received.
-      def on_accept(*addresses, &callback)
+      #
+      # If port 0 is specified, the operating system will choose a port.
+      #
+      # Returns the [host, port] that was bound (unless :multiple was specified)
+      #
+      # Options:
+      # [:multiple]
+      #   If true, then the parameter is a list of addresses, and
+      #   multiple [host,port] addresses will be returned as an array.
+      def on_accept(address, options={}, &callback)
         raise ArgumentError.new("no block given") unless callback
-        raise ArgumentError.new("no address(es) given") if addresses.empty?
-        addresses.each do |address|
-          bind_address = parse_address(address)
-          schan = ServerSocketChannel.open
-          schan.configureBlocking(false)
-          schan.socket.bind(bind_address)
-          schan.register(@selector, SelectionKey::OP_ACCEPT)
-          selection_key = schan.keyFor(@selector)   # SelectionKey object
-          selection_key.attach({:on_accept => callback})
+        if options[:multiple]
+          # address is actually a list of addresses
+          options = options.dup
+          options.delete(:multiple)
+          return address.map{ |addr| on_accept(addr, options, &callback) }
         end
-        nil
+        bind_address = parse_address(address)
+        schan = ServerSocketChannel.open
+        schan.configureBlocking(false)
+        schan.socket.bind(bind_address)
+        schan.register(@selector, SelectionKey::OP_ACCEPT)
+        selection_key = schan.keyFor(@selector)   # SelectionKey object
+        selection_key.attach({:on_accept => callback})
+        unparse_address(schan.socket.getLocalSocketAddress)   # return [host,port] of local socket
       end
 
-      # Initiate a connection to the specified address (or list of addresses) and
-      # invoke the given block when a connection is made.
-      def on_connect(*addresses, &callback)
+      # Initiate a TCP connection to the specified address (given as [host, port])
+      # and invoke the given block when a connection is made.
+      #
+      # Returns the [host, port] that will be connected to.
+      def on_connect(address, options={}, &callback)
         raise ArgumentError.new("no block given") unless callback
-        raise ArgumentError.new("no address(es) given") if addresses.empty?
-        addresses.each do |address|
-          connect_address = parse_address(address)
-          chan = SocketChannel.open
-          chan.configureBlocking(false)
-          chan.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
-          chan.register(@selector, SelectionKey::OP_CONNECT)
-          selection_key = chan.keyFor(@selector)   # SelectionKey object
-          selection_key.attach({:on_connect => callback})
-          chan.connect(connect_address)
-        end
-        nil
+        connect_address = parse_address(address)
+        chan = SocketChannel.open
+        chan.configureBlocking(false)
+        chan.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
+        chan.register(@selector, SelectionKey::OP_CONNECT)
+        selection_key = chan.keyFor(@selector)   # SelectionKey object
+        selection_key.attach({:on_connect => callback})
+        chan.connect(connect_address)
+        unparse_address(connect_address)    # Return [host, port] of address that will be connected to.
       end
 
       def main
         loop do
-          break if @selector.keys.empty?
+          break if @selector.keys.empty? or @exit_mutex.synchronize{ @exit_requested }
           @selector.select
           @selector.selectedKeys.to_a.each do |k|
             handle_selection_key(k)
@@ -83,11 +108,18 @@ module ScripTTY
 
       private
 
+        # Convert [host, port] to InetSocketAddress
         def parse_address(address)
           raise TypeError.new("address must be [host, port], not #{address.inspect}") unless address.length == 2
           host, port = address
           raise TypeError.new("address must be [host, port], not #{address.inspect}") unless host.is_a? String and port.is_a? Integer
           InetSocketAddress.new(host, port)
+        end
+
+        # Convert InetSocketAddress to [host, port]
+        def unparse_address(socket_address)
+          # NB: duplicated in ConnectionWrapper
+          [socket_address.getAddress.getHostAddress, socket_address.getPort]
         end
 
         def handle_selection_key(k)
@@ -198,6 +230,7 @@ module ScripTTY
       #
       # This object is passed to the block given to EventLoop#on_accept
       class ConnectionWrapper
+        attr_reader :master
         def initialize(master, channel) # :nodoc:
           @master = master
           @channel = channel
@@ -217,13 +250,18 @@ module ScripTTY
           nil
         end
         def remote_address
-          sa = @channel.socket.getRemoteSocketAddress
-          [sa.getAddress.getHostAddress, sa.getPort]
+          unparse_address(@channel.socket.getRemoteSocketAddress)
         end
         def local_address
-          sa = @channel.socket.getLocalSocketAddress
-          [sa.getAddress.getHostAddress, sa.getPort]
+          unparse_address(@channel.socket.getLocalSocketAddress)
         end
+
+        private
+          # Convert InetSocketAddress to [host, port]
+          def unparse_address(socket_address)
+            # NB: duplicated in EventLoop
+            [socket_address.getAddress.getHostAddress, socket_address.getPort]
+          end
       end
     end
   end
