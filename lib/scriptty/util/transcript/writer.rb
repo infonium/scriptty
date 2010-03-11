@@ -20,9 +20,14 @@ module ScripTTY
   module Util
     module Transcript
       class Writer
+
+        # Set this to non-nil to force the next record to have a specific timestamp
+        attr_accessor :override_timestamp
+
         def initialize(io)
           @io = io
           @start_time = Time.now
+          @override_timestamp = nil
         end
 
         def close
@@ -67,7 +72,7 @@ module ScripTTY
         private
 
           def write_event(type, *args)
-            t = Time.now - @start_time
+            t = @override_timestamp ? @override_timestamp.to_f : (Time.now - @start_time)
             encoded_args = args.map{|a| encode_string(a)}.join(" ")
             @io.write sprintf("[%.03f] %s %s", t, type, encoded_args) + "\n"
             @io.flush if @io.respond_to?(:flush)
