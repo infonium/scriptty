@@ -34,6 +34,16 @@ module ScripTTY
           @io.close
         end
 
+        # Client connection opened
+        def client_open(host, port)
+          write_event("Copen", host, port.to_s)
+        end
+
+        # Server connection opened
+        def server_open(host, port)
+          write_event("Sopen", host, port.to_s)
+        end
+
         # Log bytes from the client
         def from_client(bytes)
           write_event("C", bytes)

@@ -40,6 +40,7 @@ module ScripTTY
       end
 
       def main
+        @output_file = Util::Transcript::Writer.new(File.open(@options[:output], "w")) if @options[:output]
         @net = ScripTTY::Net::EventLoop.new
         @net.on_accept(@options[:console_addrs], :multiple => true) do |conn|
           p = PasswordPrompt.new(conn, "Console password: ")
@@ -51,33 +52,25 @@ module ScripTTY
           }
         end
         @net.on_accept(@options[:listen_addrs], :multiple => true) do |conn|
+          @output_file.client_open(*conn.remote_address) if @output_file
           @client_connection = conn
           @client_connection.on_receive_bytes { |bytes| handle_client_receive_bytes(bytes) }
-          @client_connection.on_close { handle_client_close ; @client_connection = nil; check_close_output_file }
+          @client_connection.on_close { handle_client_close ; @client_connection = nil }
           handle_client_connected
         end
         @net.main
+      ensure
+        @output_file.close if @output_file
       end
 
       private
 
-        def check_close_output_file
-          if !@client_connection and !@server_connection and @output_file
-            @output_file.close
-            @output_file = nil
-          end
-        end
 
         def handle_client_connected
           connect_to_server
         end
 
         def handle_server_connected
-          if @options[:output_dir]
-            output_file_path = File.join(@options[:output_dir], Time.now.strftime("%Y-%m-%dT%H_%M_%S") + ".txt")
-            output_file = File.open(output_file_path, "w")
-            @output_file = Util::Transcript::Writer.new(output_file)
-          end
           @term = ScripTTY::Term.new(@options[:term])
           @term.on_unknown_sequence do |sequence|
             @output_file.info("Unknown escape sequence", sequence) if @output_file
@@ -112,9 +105,10 @@ module ScripTTY
 
         def connect_to_server
           @net.on_connect(@options[:connect_addr]) do |server|
+            @output_file.server_open(*server.remote_address) if @output_file
             @server_connection = server
             @server_connection.on_receive_bytes { |bytes| handle_server_receive_bytes(bytes) }
-            @server_connection.on_close { handle_server_close; @server_connection = nil; check_close_output_file }
+            @server_connection.on_close { handle_server_close; @server_connection = nil }
             handle_server_connected
           end
         end
@@ -143,9 +137,8 @@ module ScripTTY
               raise ArgumentError.new("Unsupported terminal #{optarg.inspect}") unless ScripTTY::Term::TERMINAL_TYPES.include?(optarg)
               options[:term] = optarg
             end
-            opts.on("-O", "--output-dir DIRECTORY", "Write capture files to DIRECTORY") do |optarg|
-              raise ArgumentError.new("--output-dir may only be specified once") if options[:output_dir]
-              options[:output_dir] = optarg
+            opts.on("-o", "--output FILE", "Write transcript to FILE") do |optarg|
+              options[:output] = optarg
             end
           end
           opts.parse!(args)

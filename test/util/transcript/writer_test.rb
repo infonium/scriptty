@@ -25,6 +25,8 @@ class TranscriptWriterTest < Test::Unit::TestCase
     sio = StringIO.new
     writer = ScripTTY::Util::Transcript::Writer.new(sio)
     writer.override_timestamp = 88.0
+    writer.client_open("10.0.0.5", 55555)
+    writer.server_open("10.0.0.1", 54321)
     writer.from_client("\e[33m")
     writer.from_server("\e[33m")
     writer.client_parsed("t_foo", "\e[33m")
@@ -34,6 +36,8 @@ class TranscriptWriterTest < Test::Unit::TestCase
     writer.info("msg")
     writer.close
     expected = <<-'EOF'.strip.split("\n").map{|line| line.strip}.join("\n") + "\n"
+      [88.000] Copen "10.0.0.5" "55555"
+      [88.000] Sopen "10.0.0.1" "54321"
       [88.000] C "\033[33m"
       [88.000] S "\033[33m"
       [88.000] Cp "t_foo" "\033[33m"

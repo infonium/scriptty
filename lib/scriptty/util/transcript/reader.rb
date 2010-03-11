@@ -36,6 +36,8 @@ module ScripTTY
       class Reader
 
         OP_TYPES = {
+          "Copen" => :client_open,  # client connection opened
+          "Sopen" => :server_open,  # server connection opened
           "C" => :from_client,  # bytes from client
           "S" => :from_server,  # bytes from server
           "*" => :info,   # informational message
@@ -68,6 +70,10 @@ module ScripTTY
           end
           type = OP_TYPES[op]
           raise ArgumentError.new("line #{@current_line}: Unrecognized opcode #{op}") unless type
+          if [:client_open, :server_open].include?(type)
+            raise ArgumentError.new("line #{@current_line}: Bad port #{args[1].inspect}") unless args[1] =~ /\A(\d+)\Z/m
+            args[1] = args[1].to_i
+          end
           [timestamp, type, args]
         end
       end

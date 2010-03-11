@@ -23,6 +23,8 @@ class TranscriptReaderTest < Test::Unit::TestCase
   def test_basic
     input_lines = <<-'EOF'.split("\n").map{|line| line.strip}
       [0.000] * "Informational message" "with argument" "\377"
+      [0.000] Copen "10.0.0.5" "55555"
+      [0.000] Sopen "10.0.0.1" "1234"
       [0.001] C "alice\211\0010"
       [0.001] S "bob\042"
       [2.500] Cp "foo" "arg"
@@ -35,6 +37,8 @@ class TranscriptReaderTest < Test::Unit::TestCase
     EOF
     expected = [
       [0.0, :info, ["Informational message", "with argument", "\xff"]],
+      [0.0, :client_open, ["10.0.0.5", 55555]],
+      [0.0, :server_open, ["10.0.0.1", 1234]],
       [0.001, :from_client, ["alice\x89\x01\x30"]],
       [0.001, :from_server, ["bob\x22"]],
       [2.5, :client_parsed, ["foo", "arg"]],
@@ -57,6 +61,8 @@ class TranscriptReaderTest < Test::Unit::TestCase
       [0.000] * "Bad octal value" "\400"
       [0.100] * "No quotes" foo
       [0.200] $ "Unknown type"
+      [0.200] Copen "bad port" "10abc"
+      [0.200] Sopen "bad port" "10abc"
       [0.300] * "Non-printableASCII characters" "Café"
       [0.400]  Cx "too much whitespace"
       * "No timestamp"
