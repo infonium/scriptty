@@ -104,6 +104,7 @@ module ScripTTY
           end
         end
       ensure
+        @selector.keys.to_a.each { |k| k.channel.close }    # Close any sockets opened by this EventLoop
         @selector.close
       end
 

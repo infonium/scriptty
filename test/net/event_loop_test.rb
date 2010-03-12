@@ -30,6 +30,30 @@ class EventLoopTest < Test::Unit::TestCase
   else  # defined?(Java)
 
     require 'scriptty/net/event_loop'
+    require 'thread'
+
+    # An listening socket should be closed when the event loop finishes
+    def test_listening_socket_gets_closed
+      # Create an event loop, bind a socket, then exit the event loop.
+      evloop = ScripTTY::Net::EventLoop.new
+      bind_addr = evloop.on_accept(['localhost', 0]) { |conn| true }
+      t = Thread.new { evloop.main }
+      evloop.exit
+      t.join
+
+      # Create another event loop, and attempt to connect to the socket.
+      connected = false
+      evloop = ScripTTY::Net::EventLoop.new
+      evloop.on_connect(bind_addr) { |conn| evloop.exit }
+
+      begin
+        evloop.main
+        flunk "sockets should be closed when event loop exits"
+      rescue NativeException => e
+        # XXX - We should be able to handle connection errors on a per-connection basis
+        assert_equal "java.net.ConnectException: Connection refused", e.message
+      end
+    end
 
     # Start two event loops and make them talk to each other
     def test_chatter
