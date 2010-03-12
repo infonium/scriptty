@@ -29,8 +29,11 @@ class EventLoopTest < Test::Unit::TestCase
 
   else  # defined?(Java)
 
+    # XXX - These tests are ugly, using a mix of different styles.  Clean them up (only if you know what you are doing!)
+
     require 'scriptty/net/event_loop'
     require 'thread'
+    require 'stringio'
 
     CONNECTION_REFUSE_ADDR = ['localhost', 2]   # address on which connections will be refused
 
@@ -61,10 +64,10 @@ class EventLoopTest < Test::Unit::TestCase
     end
 
     # An listening socket should be closed when the event loop finishes
-    def test_listening_socket_gets_closed
+    def test_listening_socket_gets_closed_on_exit
       # Create an event loop, bind a socket, then exit the event loop.
       evloop = ScripTTY::Net::EventLoop.new
-      bind_addr = evloop.on_accept(['localhost', 0]){ |conn| true }.local_address
+      bind_addr = evloop.listen(['localhost', 0]) { |server| server.local_address }
       evloop.timer(0) { evloop.exit }
       evloop.main
 
@@ -81,6 +84,39 @@ class EventLoopTest < Test::Unit::TestCase
       }
       evloop.main
       assert error, "sockets should be closed when event loop exits"
+    end
+
+    def test_simple_echo_server
+      # XXX - There might be a race condition here.
+      log = []
+      evloop = ScripTTY::Net::EventLoop.new
+      echo_addr = evloop.on_accept(['localhost', 0]) { |conn|
+        conn.on_close { log << :echo_closed }
+        conn.on_receive_bytes { |bytes| conn.write(bytes) }
+      }.local_address
+      bytes_to_send = "Hello, world!".split("")
+      evloop.on_connect(echo_addr) { |conn|
+        log << :client_open
+        conn.on_close {
+          log << :client_close
+          evloop.exit
+        }
+        write_next = Proc.new {
+          if bytes_to_send.empty?
+            log << :client_close_graceful
+            conn.close
+          else
+            log << :client_write unless log.last == :client_write
+            conn.write(bytes_to_send.shift, &write_next)
+          end
+        }
+        write_next.call
+      }
+      evloop.timer(5, :daemon => true) { log << :TIMEOUT; evloop.exit }   # Set 5-second hard timeout for this test
+      evloop.main
+
+      expected_log = [ :client_open, :client_write, :client_close_graceful, :echo_closed, :client_close ]
+      assert_equal expected_log, log
     end
 
     # Start two sockets and make them talk to each other
@@ -126,11 +162,16 @@ class EventLoopTest < Test::Unit::TestCase
         conn.on_close { bob_log << "closed"; bob_done = true; evloop.exit if alice_done }
       }
 
+      # Set 5-second hard timeout for this test
+      timeout = false
+      expected_logs[:timeout] = false
+      evloop.timer(5, :daemon => true) { timeout = true; evloop.exit }
+
       # Execute
       evloop.main
 
       # Assertions
-      assert_equal(expected_logs, {:alice => alice_log, :bob => bob_log}, "logs not what was expected")
+      assert_equal(expected_logs, {:timeout => timeout, :alice => alice_log, :bob => bob_log}, "logs not what was expected")
     end
 
     def test_run_empty
@@ -142,32 +183,82 @@ class EventLoopTest < Test::Unit::TestCase
     def test_local_and_remote_address
       evloop = ScripTTY::Net::EventLoop.new
 
+      client_log = StringIO.new
+      server_log = StringIO.new
+      timeout_log = StringIO.new
+      #client_log = server_log = timeout_log = $stdout   # for debugging
+
       server_local_addr = nil
       server_remote_addr = nil
       server = evloop.listen(['localhost', 0])
       server_addr = server.local_address
       server.on_accept { |conn|
+        server_log.puts "server_accept"
+        conn.on_close { server_log.puts "server_conn_close" }
         server_local_addr = conn.local_address
         server_remote_addr = conn.remote_address
         conn.close
         server.close
       }
+      server.on_close { server_log.puts "server_close" }
 
       client_local_addr = nil
       client_remote_addr = nil
       client = evloop.connect(server_addr)
       client.on_connect { |conn|
+        client_log.puts "client_connect"
         client_local_addr = conn.local_address
         client_remote_addr = conn.remote_address
         conn.close
       }
+      client.on_close { client_log.puts "client_close" }
+
+      # Set 5-second hard timeout for this test
+      evloop.timer(5, :daemon => true) { timeout_log.puts "TIMEOUT"; evloop.exit }
 
       evloop.main
 
-      assert_equal server_addr, server_local_addr
-      assert_equal server_addr, client_remote_addr
-      assert_equal server_remote_addr, client_local_addr
+      expected_logs = {}
+      expected_logs[:server] = %w( server_accept server_close server_conn_close )
+      expected_logs[:client] = %w( client_connect client_close )
+      expected_logs[:timeout] = []
+
+      actual_logs = {
+        :server => server_log.string.split("\n"),
+        :client => client_log.string.split("\n"),
+        :timeout => timeout_log.string.split("\n"),
+      }
+
+      assert_equal expected_logs, actual_logs
+
+      # Checl that the addresses are what we expect
+      assert_equal server_addr, server_local_addr, "server_addr should== server_local_addr"
+      assert_equal server_addr, client_remote_addr, "server_addr should== client_remote_addr"
+      assert_equal server_remote_addr, client_local_addr, "server_remote_addr should== client_local_addr"
     end
+
+#    # Regression test: A client event loop should exit on its own when a
+#    # connection is closed, even if there are no on_close or on_receive_bytes
+#    # callbacks defined.
+#    def test_client_exits_with_no_readers
+#      evloop = ScripTTY::Net::EventLoop.new
+#      server = evloop.listen(['localhost', 0])
+#      #server.on_accept { |conn| server.close }    # stop accepting new connections, but keep the current connection open
+#      #server.on_accept { |conn| server.close; conn.close }    # stop accepting new connections, and close the connection
+#      server.on_accept { |conn| server.close; conn.on_close{ nil } ; conn.close }    # stop accepting new connections, and close the connection DEBUG FIXME
+#
+#      client = evloop.connect(server.local_address)
+#      client.on_connect{ true }
+#      client.on_close { true }  # DEBUG FIXME
+#
+#      # Timeout
+#      timeout = false
+#      evloop.timer(5, :daemon => true) { timeout = true; evloop.exit }
+#
+#      evloop.main
+#
+#      assert !timeout, "TIMEOUT"
+#    end
 
     def test_accept_multiple
       evloop = ScripTTY::Net::EventLoop.new
@@ -200,16 +291,60 @@ class EventLoopTest < Test::Unit::TestCase
       assert_equal alice_addrs[1], carol_connected, "carol should connect to alice's second port"
     end
 
+    def test_graceful_close
+      sequence = []
+      evloop = ScripTTY::Net::EventLoop.new
+      alice = evloop.listen(['localhost', 0])
+      alice.on_accept { |conn|
+        alice.close
+        conn.on_receive_bytes { |bytes| sequence << :alice_received }
+        conn.on_close { sequence << :alice_closed }
+      }
+      alice.on_close { sequence << :server_closed }
+
+      bob = evloop.connect(alice.local_address)
+      bob.on_connect { |conn|
+        conn.on_close { sequence << :bob_closed }
+        conn.write("Hello world!") {
+          sequence << :bob_wrote
+          evloop.timer(0.2) {
+            sequence << :bob_closing; conn.close
+          }
+        }
+      }
+
+      evloop.timer(5, :daemon => true) { sequence << :TIMEOUT; evloop.exit }
+
+      evloop.main
+      # :server_closed and :bob_wrote might happen in reverse order.  If that happens, make this assertion smarter.
+      assert_equal [:server_closed, :bob_wrote, :alice_received, :bob_closing, :alice_closed, :bob_closed], sequence
+    end
+
     # The timer should work, and not be too fast (or too slow).
     def test_timer_works
       evloop = ScripTTY::Net::EventLoop.new
       t0 = Time.now
-      evloop.timer(1) { evloop.exit }
+      evloop.timer(1) { true }
       evloop.main
       t1 = Time.now
       delta = t1 - t0
       assert delta >= 1.0, "Timeout too short: #{delta.inspect}"      # This should never fail
       assert delta < 5.0, "warning: Timeout too long: #{delta.inspect}"     # This might fail on a slow machine
+    end
+
+    # Daemon timers should not prevent the main loop from exiting
+    def test_daemon_timers
+      evloop = ScripTTY::Net::EventLoop.new
+      user_timer_fired = false
+      daemon_timer_fired = false
+      t0 = Time.now
+      evloop.timer(0.002) { user_timer_fired = true }
+      evloop.timer(10, :daemon => true) { daemon_timer_fired = true ; evloop.exit }
+      evloop.main
+      t1 = Time.now
+      delta = t1 - t0
+      assert user_timer_fired, "user timer should have fired"
+      assert !daemon_timer_fired, "daemon timer should not have fired"
     end
 
     # A timer with a zero-second delay should get executed immediately.

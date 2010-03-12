@@ -24,12 +24,17 @@ require 'thread'
 module ScripTTY
   module Net
     class EventLoop
+      # XXX - This complicated bit of code demonstrates that test-driven
+      # development is not a panacea.  (A cleanup would be grand.)
+
       include_class 'java.net.InetSocketAddress'
       include_class 'java.nio.ByteBuffer'
       include_class 'java.nio.channels.SelectionKey'
       include_class 'java.nio.channels.Selector'
       include_class 'java.nio.channels.ServerSocketChannel'
       include_class 'java.nio.channels.SocketChannel'
+
+      DEBUG = false
 
       def initialize
         @selector = Selector.open
@@ -113,7 +118,7 @@ module ScripTTY
         chan.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
         chan.connect(connect_address)
         cw = OutgoingConnectionWrapper.new(self, chan, address)
-        chan.register(@selector, 0)
+        chan.register(@selector, 0)   # FIXME: If the user doesn't set an on_connect and an on_close/on_receive_bytes callback, the main loop won't detect when the remote end closes the connection.
         selection_key = chan.keyFor(@selector)   # SelectionKey object
         selection_key.attach({:connection_wrapper => cw})
         if block_given?
@@ -137,9 +142,9 @@ module ScripTTY
       # have elapsed.
       #
       # Return the ScripTTY::Net::EventLoop::Timer object for the timer.
-      def timer(delay, &callback)
+      def timer(delay, options={}, &callback)
         raise ArgumentError.new("no block given") unless callback
-        new_timer = Timer.new(self, Time.now + delay, callback)
+        new_timer = Timer.new(self, Time.now + delay, callback, options)
         i = 0
         while i < @timer_queue.length   # Insert new timer in the correct sort order
           break if @timer_queue[i].expire_at > new_timer.expire_at
@@ -152,7 +157,10 @@ module ScripTTY
 
       def main
         loop do
-          break if (@selector.keys.empty? and @timer_queue.empty?) or @exit_mutex.synchronize{ @exit_requested }
+          # Exit if the "exit" method has been invoked.
+          break if @exit_mutex.synchronize{ @exit_requested }
+          # Exit if there are no active connections and no non-daemon timers
+          break if (@selector.keys.empty? and (@timer_queue.empty? or @timer_queue.map{|t| t.daemon?}.all?))
 
           # If there are any timers, schedule a wake-up for when the first
           # timer expires.
@@ -165,7 +173,9 @@ module ScripTTY
           end
 
           # select(), unless the timeout has already expired
+          puts "SELECT: to=#{timeout_millis.inspect} kk=#{@selector.keys.to_a.map{|k|k.attachment}.inspect} tt=#{@timer_queue.length}" if DEBUG
           @selector.select(timeout_millis) if timeout_millis
+          puts "DONE SELECT" if DEBUG
 
           # Invoke the callbacks for any expired timers
           now = Time.now
@@ -198,6 +208,7 @@ module ScripTTY
           att = k.attachment
           case k.channel
           when ServerSocketChannel
+            puts "SELECTED ServerSocketChannel: valid:#{k.valid?} connectable:#{k.connectable?} writable:#{k.writable?} readable:#{k.readable?}" if DEBUG
             if k.valid? and k.acceptable?
               lw = att[:listening_socket_wrapper]
               accepted = false
@@ -221,6 +232,7 @@ module ScripTTY
             end
 
           when SocketChannel
+            puts "SELECTED SocketChannel: valid:#{k.valid?} connectable:#{k.connectable?} writable:#{k.writable?} readable:#{k.readable?}" if DEBUG
             if k.valid? and k.connectable?
               cw = att[:connection_wrapper]
               connected = false
@@ -241,9 +253,11 @@ module ScripTTY
               end
             end
             if k.valid? and k.writable?
+              puts "WRITABLE #{att.inspect}" if DEBUG
               bufs = att[:write_buffers]
               callbacks = att[:write_completion_callbacks]
               if bufs and !bufs.empty?
+                puts "BUFS NOT EMPTY" if DEBUG
                 # Send as much as we can of the list of write buffers
                 w = k.channel.write(bufs.to_java(ByteBuffer))
 
@@ -259,14 +273,21 @@ module ScripTTY
                 # Indicate that we're no longer interested in whether the socket is writable.
                 k.interestOps(k.interestOps & ~SelectionKey::OP_WRITE)
               end
+              # At the end of a graceful close, (half-)close the output of the TCP connection
+              if att[:graceful_close] and (!bufs or bufs.empty?)
+                puts "SHUTTING DOWN OUTPUT" if DEBUG
+                shutdown_output_on_channel(k.channel)
+              end
             end
             if k.valid? and k.readable?
               @read_buffer.clear
               length = k.channel.read(@read_buffer)
-              if length < 0 # connection_closed
+              if length < 0 # connection shut down (or at least the input is)
+                puts "READ length < 0" if DEBUG
                 close_channel(k.channel)
               elsif length == 0
-                raise "BUG: unhandled length == 0"
+                puts "READ length == 0" if DEBUG
+                raise "BUG: unhandled length == 0"    # I think this should never happen.
               else
                 bytes = String.from_java_bytes(@read_buffer.array[0,length])
                 invoke_callback(k.channel, :on_receive_bytes, bytes)
@@ -314,6 +335,7 @@ module ScripTTY
           channel_callback_hash(channel)[:on_connect] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
           k.interestOps(k.interestOps | SelectionKey::OP_CONNECT)    # we want to when the socket is connected or when there are connection errors
+          #k.interestOps(k.interestOps | SelectionKey::OP_CONNECT | SelectionKey::OP_READ)    # we want to when the socket is connected or when there are connection errors DEBUG FIXME
           nil
         end
 
@@ -333,13 +355,22 @@ module ScripTTY
 
         def set_on_close_callback(channel, &callback) # :nodoc:
           channel_callback_hash(channel)[:on_close] = callback
+
+          # we want to know when the connection closes
           k = channel.keyFor(@selector)   # SelectionKey object
-          k.interestOps(k.interestOps | SelectionKey::OP_READ)    # we want to know when the connection is closed
+          if channel.is_a?(ServerSocketChannel)
+            k.interestOps(k.interestOps | SelectionKey::OP_ACCEPT)
+          else  # SocketChannel
+            k.interestOps(k.interestOps | SelectionKey::OP_READ)
+          end
           nil
         end
 
         def add_to_write_buffer(channel, bytes, &completion_callback) # :nodoc:
           h = channel_callback_hash(channel)
+
+          return if h[:graceful_close]
+
           # Buffer the data to be written
           h[:write_buffers] ||= []
           h[:write_buffers] << ByteBuffer.wrap(bytes.to_java_bytes)
@@ -354,13 +385,35 @@ module ScripTTY
           nil
         end
 
+        def shutdown_output_on_channel(channel)  # :nodoc:
+          @selector.wakeup
+          h = channel_callback_hash(channel)
+          return if h[:already_closed] or h[:already_shutdown_output]
+          channel.socket.shutdownOutput
+          h[:already_shutdown_output] = true
+        end
+
         def close_channel(channel, error=false)  # :nodoc:
+          puts "CLOSE_CHANNEL(hard) #{channel.java_class.simple_name}" if DEBUG
           @selector.wakeup
           h = channel_callback_hash(channel)
           return if h[:already_closed]
           channel.close
           h[:already_closed] = true
           invoke_callback(channel, :on_close) unless error
+        end
+
+        def close_channel_gracefully(channel)
+          puts "CLOSING GRACEFULLY" if DEBUG
+          @selector.wakeup
+          h = channel_callback_hash(channel)
+          return if h[:graceful_close]
+          h[:graceful_close] = true
+
+          # The graceful close code is in the channel-is-writable handler (above),
+          # so indicate that we care about whether the channel is # writable.
+          k = channel.keyFor(@selector)
+          k.interestOps(k.interestOps | SelectionKey::OP_WRITE)
         end
 
         def channel_callback_hash(channel) # :nodoc:
@@ -423,6 +476,13 @@ module ScripTTY
           @master.send(:add_to_write_buffer, @channel, bytes, &completion_callback)
           self
         end
+        def close(options={})
+          if options[:hard]
+            @master.send(:close_channel, @channel)
+          else
+            @master.send(:close_channel_gracefully, @channel)
+          end
+        end
         def remote_address
           EventLoop.unparse_address(@channel.socket.getRemoteSocketAddress)
         end
@@ -447,10 +507,15 @@ module ScripTTY
 
       class Timer
         attr_reader :expire_at
-        def initialize(master, expire_at, callback)
+        def initialize(master, expire_at, callback, options={})
           @master = master
           @expire_at = expire_at
           @callback = callback
+          @daemon = !!options[:daemon]  # if true, we won't hold up the main loop (just like a daemon thread)
+        end
+
+        def daemon?
+          @daemon
         end
 
         def cancel
