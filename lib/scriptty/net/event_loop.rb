@@ -120,14 +120,14 @@ module ScripTTY
           # timer expires.
           next_timer = @timer_queue.first
           if next_timer
-            timeout = (1000 * (next_timer.expire_at - Time.now)).to_f
-            timeout = nil if timeout <= 0.0
+            timeout_millis = (1000 * (next_timer.expire_at - Time.now)).to_i
+            timeout_millis = nil if timeout_millis <= 0
           else
-            timeout = 0   # sleep indefinitely
+            timeout_millis = 0   # sleep indefinitely
           end
 
           # select(), unless the timeout has already expired
-          @selector.select(timeout) if timeout
+          @selector.select(timeout_millis) if timeout_millis
 
           # Invoke the callbacks for any expired timers
           now = Time.now

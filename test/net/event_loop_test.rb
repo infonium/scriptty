@@ -181,9 +181,10 @@ class EventLoopTest < Test::Unit::TestCase
     def test_timer_cancel
       result = []
       evloop = ScripTTY::Net::EventLoop.new
-      c = evloop.timer(0.8) { result << :c }
-      b = evloop.timer(0.5) { result << :b }
-      a = evloop.timer(0.2) { result << :a; b.cancel }
+      b = nil
+      a = evloop.timer(0.00001) { result << :a; b.cancel }
+      b = evloop.timer(0.00002) { result << :b }
+      c = evloop.timer(0.00003) { result << :c }
       evloop.main
       assert_equal [:a, :c], result
     end
