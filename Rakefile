@@ -11,8 +11,12 @@ Rake::TestTask.new(:test) do |t|
   t.pattern = 'test/**/*_test.rb'
 end
 
-require 'rcov/rcovtask'
-Rcov::RcovTask.new do |t|
-  t.pattern = 'test/**/*_test.rb'
-  t.rcov_opts = ['--text-report', '--exclude', 'gems,rcov,jruby.*,\(eval\)']
+begin
+  require 'rcov/rcovtask'
+  Rcov::RcovTask.new do |t|
+    t.pattern = 'test/**/*_test.rb'
+    t.rcov_opts = ['--text-report', '--exclude', 'gems,rcov,jruby.*,\(eval\)']
+  end
+rescue LoadError
+  $stderr.puts "warning: rcov not installed; coverage testing not available."
 end
