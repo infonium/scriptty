@@ -49,50 +49,88 @@ module ScripTTY
         nil
       end
 
-      # Listen for TCP connections on a particular address (given as [host, port]),
-      # and invoke the given block when a connection is received.
+      # Listen for TCP connections on the specified address (given as [host, port])
       #
       # If port 0 is specified, the operating system will choose a port.
       #
-      # Returns the [host, port] that was bound (unless :multiple was specified)
+      # If a block is given, it will be passed the ListeningSocketWrapper
+      # object, and the result of the block will be returned.  Otherwise, the
+      # ListeningSocketWrapper object is returned.
       #
       # Options:
       # [:multiple]
-      #   If true, then the parameter is a list of addresses, and
-      #   multiple [host,port] addresses will be returned as an array.
-      def on_accept(address, options={}, &callback)
-        raise ArgumentError.new("no block given") unless callback
+      #   If true, then the parameter is a list of addresses, the block
+      #   will be invoked for each one, and the return value will be an array
+      #   of ListeningSocketWrapper objects.
+      def listen(address, options={}, &block)
         if options[:multiple]
           # address is actually a list of addresses
           options = options.dup
           options.delete(:multiple)
-          return address.map{ |addr| on_accept(addr, options, &callback) }
+          return address.map{ |addr| listen(addr, options, &block) }
         end
-        bind_address = parse_address(address)
+        bind_address = EventLoop.parse_address(address)
         schan = ServerSocketChannel.open
         schan.configureBlocking(false)
         schan.socket.bind(bind_address)
-        schan.register(@selector, SelectionKey::OP_ACCEPT)
+        lw = ListeningSocketWrapper.new(self, schan)
+        schan.register(@selector, 0)
         selection_key = schan.keyFor(@selector)   # SelectionKey object
-        selection_key.attach({:on_accept => callback})
-        unparse_address(schan.socket.getLocalSocketAddress)   # return [host,port] of local socket
+        selection_key.attach({:listening_socket_wrapper => lw})
+        if block
+          block.call(lw)
+        else
+          lw
+        end
+      end
+
+      # Convenience method: Listen for TCP connections on a particular address
+      # (given as [host, port]), and invoke the given block when a connection
+      # is received.
+      #
+      # If port 0 is specified, the operating system will choose a port.
+      #
+      # Returns the ListeningSocketWrapper.
+      #
+      # Options:
+      # [:multiple]
+      #   If true, then the parameter is a list of addresses, and
+      #   multiple ListeningSocketWrapper objects will be returned as an array.
+      def on_accept(address, options={}, &callback)
+        raise ArgumentError.new("no block given") unless callback
+        listen(address, options) { |listener| listener.on_accept(&callback) }
       end
 
       # Initiate a TCP connection to the specified address (given as [host, port])
-      # and invoke the given block when a connection is made.
       #
-      # Returns the [host, port] that will be connected to.
-      def on_connect(address, options={}, &callback)
-        raise ArgumentError.new("no block given") unless callback
-        connect_address = parse_address(address)
+      # If a block is given, it will be passed the OutgointConnectionWrapper
+      # object, and the result of the block will be returned.  Otherwise, the
+      # OutgoingConnectionWrapper object is returned.
+      def connect(address)
+        connect_address = EventLoop.parse_address(address)
         chan = SocketChannel.open
         chan.configureBlocking(false)
         chan.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
-        chan.register(@selector, SelectionKey::OP_CONNECT)
-        selection_key = chan.keyFor(@selector)   # SelectionKey object
-        selection_key.attach({:on_connect => callback})
         chan.connect(connect_address)
-        unparse_address(connect_address)    # Return [host, port] of address that will be connected to.
+        cw = OutgoingConnectionWrapper.new(self, chan, address)
+        chan.register(@selector, 0)
+        selection_key = chan.keyFor(@selector)   # SelectionKey object
+        selection_key.attach({:connection_wrapper => cw})
+        if block_given?
+          yield cw
+        else
+          cw
+        end
+      end
+
+      # Convenience method: Initiate a TCP connection to the specified
+      # address (given as [host, port]) and invoke the given block when a
+      # connection is made.
+      #
+      # Returns the OutgoingConnectionWrapper that will be connected to.
+      def on_connect(address, &callback)
+        raise ArgumentError.new("no block given") unless callback
+        connect(address) { |conn| conn.on_connect(&callback) }
       end
 
       # Invoke the specified callback after the specified number of seconds
@@ -156,44 +194,53 @@ module ScripTTY
           nil
         end
 
-        # Convert [host, port] to InetSocketAddress
-        def parse_address(address)
-          raise TypeError.new("address must be [host, port], not #{address.inspect}") unless address.length == 2
-          host, port = address
-          raise TypeError.new("address must be [host, port], not #{address.inspect}") unless host.is_a? String and port.is_a? Integer
-          InetSocketAddress.new(host, port)
-        end
-
-        # Convert InetSocketAddress to [host, port]
-        def unparse_address(socket_address)
-          # NB: duplicated in ConnectionWrapper
-          [socket_address.getAddress.getHostAddress, socket_address.getPort]
-        end
-
         def handle_selection_key(k)
           att = k.attachment
           case k.channel
           when ServerSocketChannel
             if k.valid? and k.acceptable?
-              socket_channel = k.channel.accept
-              socket_channel.configureBlocking(false)
-              socket_channel.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
-              if att[:on_accept]
+              lw = att[:listening_socket_wrapper]
+              accepted = false
+              begin
+                socket_channel = k.channel.accept
+                socket_channel.configureBlocking(false)
+                socket_channel.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
+                accepted = true
+              rescue => e
+                # Invoke the on_accept_error callback, if present.
+                begin
+                  invoke_callback(k.channel, :on_accept_error, e)
+                ensure
+                  close_channel(k.channel, true)
+                end
+              end
+              if accepted
                 cw = ConnectionWrapper.new(self, socket_channel)
-                att[:on_accept].call(cw)
+                invoke_callback(k.channel, :on_accept, cw)
               end
             end
 
           when SocketChannel
             if k.valid? and k.connectable?
-              k.channel.finishConnect
-              k.interestOps(k.interestOps & ~SelectionKey::OP_CONNECT)
-              if att[:on_connect]
-                cw = ConnectionWrapper.new(self, k.channel)
-                att[:on_connect].call(cw)
+              cw = att[:connection_wrapper]
+              connected = false
+              begin
+                k.channel.finishConnect
+                connected = true
+              rescue => e
+                # Invoke the on_connect_error callback, if present.
+                begin
+                  invoke_callback(k.channel, :on_connect_error, e)
+                ensure
+                  close_channel(k.channel, true)
+                end
+              end
+              if connected
+                k.interestOps(k.interestOps & ~SelectionKey::OP_CONNECT)    # We no longer care about connection status
+                invoke_callback(k.channel, :on_connect, cw)
               end
             end
-            if k.valid? and k.writable? # TODO FIXME
+            if k.valid? and k.writable?
               bufs = att[:write_buffers]
               callbacks = att[:write_completion_callbacks]
               if bufs and !bufs.empty?
@@ -205,7 +252,7 @@ module ScripTTY
                 while !bufs.empty? and bufs[0].position == bufs[0].limit
                   bufs.shift
                   callback = callbacks.shift
-                  callback.call if callback
+                  invoke_callback(k.channel, callback)
                 end
               elsif (k.interestOps & SelectionKey::OP_WRITE) != 0
                 # Socket is writable, but there's nothing here to write.
@@ -222,10 +269,59 @@ module ScripTTY
                 raise "BUG: unhandled length == 0"
               else
                 bytes = String.from_java_bytes(@read_buffer.array[0,length])
-                att[:on_receive_bytes].call(bytes) if att[:on_receive_bytes]
+                invoke_callback(k.channel, :on_receive_bytes, bytes)
               end
             end
           end
+        end
+
+        def invoke_callback(channel, callback, *args)
+          if callback.is_a?(Symbol)
+            callback_proc = channel_callback_hash(channel)[callback]
+          else
+            callback_proc = callback
+          end
+          error_callback = channel_callback_hash(channel)[:on_callback_error]
+          begin
+            callback_proc.call(*args) if callback_proc
+          rescue => e
+            raise unless error_callback
+            error_callback.call(e)
+          end
+          nil
+        end
+
+        def set_callback_error_callback(channel, &callback) # :nodoc:
+          channel_callback_hash(channel)[:on_callback_error] = callback
+          nil
+        end
+
+        def set_on_accept_callback(channel, &callback) # :nodoc:
+          channel_callback_hash(channel)[:on_accept] = callback
+          k = channel.keyFor(@selector)   # SelectionKey object
+          k.interestOps(k.interestOps | SelectionKey::OP_ACCEPT)
+          nil
+        end
+
+        def set_on_accept_error_callback(channel, &callback) # :nodoc:
+          channel_callback_hash(channel)[:on_accept_error] = callback
+          k = channel.keyFor(@selector)   # SelectionKey object
+          k.interestOps(k.interestOps | SelectionKey::OP_ACCEPT)
+          nil
+        end
+
+        def set_on_connect_callback(channel, &callback) # :nodoc:
+          channel_callback_hash(channel)[:on_connect] = callback
+          k = channel.keyFor(@selector)   # SelectionKey object
+          k.interestOps(k.interestOps | SelectionKey::OP_CONNECT)    # we want to when the socket is connected or when there are connection errors
+          nil
+        end
+
+        def set_on_connect_error_callback(channel, &callback) # :nodoc:
+          channel_callback_hash(channel)[:on_connect_error] = callback
+          k = channel.keyFor(@selector)   # SelectionKey object
+          k.interestOps(k.interestOps | SelectionKey::OP_CONNECT)    # we want to when the socket is connected or when there are connection errors
+          nil
         end
 
         def set_on_receive_bytes_callback(channel, &callback) # :nodoc:
@@ -239,6 +335,7 @@ module ScripTTY
           channel_callback_hash(channel)[:on_close] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
           k.interestOps(k.interestOps | SelectionKey::OP_READ)    # we want to know when the connection is closed
+          nil
         end
 
         def add_to_write_buffer(channel, bytes, &completion_callback) # :nodoc:
@@ -257,14 +354,13 @@ module ScripTTY
           nil
         end
 
-        def close_channel(channel)  # :nodoc:
+        def close_channel(channel, error=false)  # :nodoc:
           @selector.wakeup
-          k = channel.keyFor(@selector)
-          att = k.attachment
-          return if att[:already_closed]
+          h = channel_callback_hash(channel)
+          return if h[:already_closed]
           channel.close
-          att[:already_closed] = true
-          att[:on_close].call if att[:on_close]
+          h[:already_closed] = true
+          invoke_callback(channel, :on_close) unless error
         end
 
         def channel_callback_hash(channel) # :nodoc:
@@ -274,42 +370,79 @@ module ScripTTY
           k.attachment
         end
 
-      # Connection wrapper object.
-      #
-      # This object is passed to the block given to EventLoop#on_accept
-      class ConnectionWrapper
-        attr_reader :master
+      class SocketChannelWrapper
         def initialize(master, channel) # :nodoc:
           @master = master
           @channel = channel
         end
-        def on_receive_bytes(&callback)
-          @master.send(:set_on_receive_bytes_callback, @channel, &callback)
-        end
-        def on_close(&callback)
-          @master.send(:set_on_close_callback, @channel, &callback)
-        end
-        def write(bytes, &completion_callback)
-          @master.send(:add_to_write_buffer, @channel, bytes, &completion_callback)
-          nil
-        end
+
         def close
           @master.send(:close_channel, @channel)
           nil
         end
-        def remote_address
-          unparse_address(@channel.socket.getRemoteSocketAddress)
-        end
-        def local_address
-          unparse_address(@channel.socket.getLocalSocketAddress)
+
+        def on_close(&callback)
+          @master.send(:set_on_close_callback, @channel, &callback)
+          self
         end
 
-        private
-          # Convert InetSocketAddress to [host, port]
-          def unparse_address(socket_address)
-            # NB: duplicated in EventLoop
-            [socket_address.getAddress.getHostAddress, socket_address.getPort]
-          end
+        def local_address
+          EventLoop.unparse_address(@channel.socket.getLocalSocketAddress)
+        end
+
+        protected
+      end
+
+      class ListeningSocketWrapper < SocketChannelWrapper
+        def on_accept(&callback)
+          @master.send(:set_on_accept_callback, @channel, &callback)
+          self
+        end
+
+        def on_accept_error(&callback)
+          @master.send(:set_on_accept_error_callback, @channel, &callback)
+          self
+        end
+      end
+
+      # Connection wrapper object.
+      #
+      # This object is passed to the block given to EventLoop#on_accept
+      class ConnectionWrapper < SocketChannelWrapper
+        attr_reader :master
+        # Yield to the given block when another callback raises an exception.
+        def on_callback_error(&callback)
+          @master.send(:set_callback_error_callback, @channel, &callback)
+          self
+        end
+        def on_receive_bytes(&callback)
+          @master.send(:set_on_receive_bytes_callback, @channel, &callback)
+          self
+        end
+        def write(bytes, &completion_callback)
+          @master.send(:add_to_write_buffer, @channel, bytes, &completion_callback)
+          self
+        end
+        def remote_address
+          EventLoop.unparse_address(@channel.socket.getRemoteSocketAddress)
+        end
+      end
+
+      class OutgoingConnectionWrapper < ConnectionWrapper
+        def initialize(master, channel, address)
+          @address = address
+          super(master, channel)
+        end
+
+        def on_connect(&callback)
+          @master.send(:set_on_connect_callback, @channel, &callback)
+          self
+        end
+
+        def on_connect_error(&callback)
+          @master.send(:set_on_connect_error_callback, @channel, &callback)
+          self
+        end
       end
 
       class Timer
@@ -328,6 +461,20 @@ module ScripTTY
           attr_reader :callback
       end
 
+      # Convert InetSocketAddress to [host, port]
+      def self.unparse_address(socket_address)
+        return nil unless socket_address
+        [socket_address.getAddress.getHostAddress, socket_address.getPort]
+      end
+
+      # Convert [host, port] to InetSocketAddress
+      def self.parse_address(address)
+        return nil unless address
+        raise TypeError.new("address must be [host, port], not #{address.inspect}") unless address.length == 2
+        host, port = address
+        raise TypeError.new("address must be [host, port], not #{address.inspect}") unless host.is_a? String and port.is_a? Integer
+        InetSocketAddress.new(host, port)
+      end
     end
   end
 end
