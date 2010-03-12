@@ -51,7 +51,7 @@ class EventLoopTest < Test::Unit::TestCase
         flunk "sockets should be closed when event loop exits"
       rescue NativeException => e
         # XXX - We should be able to handle connection errors on a per-connection basis
-        assert_equal "java.net.ConnectException: Connection refused", e.message
+        assert_match /^java\.net\.ConnectException: Connection refused/, e.message
       end
     end
 
