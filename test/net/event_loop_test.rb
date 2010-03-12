@@ -37,9 +37,8 @@ class EventLoopTest < Test::Unit::TestCase
       # Create an event loop, bind a socket, then exit the event loop.
       evloop = ScripTTY::Net::EventLoop.new
       bind_addr = evloop.on_accept(['localhost', 0]) { |conn| true }
-      t = Thread.new { evloop.main }
-      evloop.exit
-      t.join
+      evloop.timer(0) { evloop.exit }
+      evloop.main
 
       # Create another event loop, and attempt to connect to the socket.
       connected = false
@@ -57,13 +56,15 @@ class EventLoopTest < Test::Unit::TestCase
 
     # Start two event loops and make them talk to each other
     def test_chatter
+      evloop = ScripTTY::Net::EventLoop.new
       expected_logs = {}
+
+      alice_done = bob_done = false   # XXX - We should do graceful TCP shutdown here instead.
 
       # Alice
       expected_logs[:alice] = [ "accepted", "said hello", "received", "said goodbye", "closed" ]
       alice_log = []
-      alice = ScripTTY::Net::EventLoop.new
-      alice_addr = alice.on_accept(["localhost", 0]) { |conn|
+      alice_addr = evloop.on_accept(["localhost", 0]) { |conn|
         alice_log << "accepted"
         conn.write("Hello, my name is Alice.  What is your name?\n") { alice_log << "said hello" }
         buffer = ""
@@ -76,14 +77,13 @@ class EventLoopTest < Test::Unit::TestCase
             conn.write("Goodbye, #{name}!\n") { alice_log << "said goodbye"; conn.close }
           end
         }
-        conn.on_close { alice_log << "closed"; alice.exit }
+        conn.on_close { alice_log << "closed"; alice_done = true; evloop.exit if bob_done }
       }
 
       # Bob
       expected_logs[:bob] = [ "connected", "received", "said name", "received", "closed" ]
       bob_log = []
-      bob = ScripTTY::Net::EventLoop.new
-      bob.on_connect(alice_addr) { |conn|
+      evloop.on_connect(alice_addr) { |conn|
         bob_log << "connected"
         buffer = ""
         conn.on_receive_bytes { |bytes|
@@ -94,15 +94,14 @@ class EventLoopTest < Test::Unit::TestCase
             conn.write("My name is Bob.\n") { bob_log << "said name" }
           end
         }
-        conn.on_close { bob_log << "closed"; bob.exit }
+        conn.on_close { bob_log << "closed"; bob_done = true; evloop.exit if alice_done }
       }
 
       # Execute
-      thread_status = run_threads(:alice => alice, :bob => bob)
+      evloop.main
 
       # Assertions
       assert_equal(expected_logs, {:alice => alice_log, :bob => bob_log}, "logs not what was expected")
-      assert_thread_status(thread_status)
     end
 
     def test_run_empty
@@ -112,10 +111,11 @@ class EventLoopTest < Test::Unit::TestCase
 
     # Test ConnectionWrapper#local_address and ConnectionWrapper#remote_address
     def test_local_and_remote_address
+      evloop = ScripTTY::Net::EventLoop.new
+
       alice_local_addr = nil
       alice_remote_addr = nil
-      alice = ScripTTY::Net::EventLoop.new
-      alice_addr = alice.on_accept(['localhost', 0]) { |conn|
+      alice_addr = evloop.on_accept(['localhost', 0]) { |conn|
         alice_local_addr = conn.local_address
         alice_remote_addr = conn.remote_address
         conn.on_close { conn.master.exit }
@@ -123,54 +123,48 @@ class EventLoopTest < Test::Unit::TestCase
       }
       bob_local_addr = nil
       bob_remote_addr = nil
-      bob = ScripTTY::Net::EventLoop.new
-      bob_addr = bob.on_connect(alice_addr) { |conn|
+      bob_addr = evloop.on_connect(alice_addr) { |conn|
         bob_local_addr = conn.local_address
         bob_remote_addr = conn.remote_address
-        conn.on_close { conn.master.exit }
         conn.close
       }
 
-      # Execute
-      thread_status = run_threads(:alice => alice, :bob => bob)
+      evloop.main
 
       assert_equal alice_addr, alice_local_addr
       assert_equal alice_addr, bob_remote_addr
       assert_equal alice_remote_addr, bob_local_addr
-      assert_thread_status(thread_status)
     end
 
     def test_accept_multiple
+      evloop = ScripTTY::Net::EventLoop.new
+
       # Listen on two different ports (chosen by the operating system)
       alice_accepted = []
-      alice = ScripTTY::Net::EventLoop.new
-      alice_addrs = alice.on_accept([['localhost', 0], ['localhost', 0]], :multiple => true) { |conn|
+      alice_addrs = evloop.on_accept([['localhost', 0], ['localhost', 0]], :multiple => true) { |conn|
         alice_accepted << conn.local_address
         conn.on_close { conn.master.exit if alice_accepted.length == 2 }
         conn.close
       }
 
       bob_connected = nil
-      bob = ScripTTY::Net::EventLoop.new
-      bob_addr = bob.on_connect(alice_addrs[0]) { |conn|
+      bob_addr = evloop.on_connect(alice_addrs[0]) { |conn|
         bob_connected = conn.remote_address
         conn.close
       }
 
       carol_connected = nil
-      carol = ScripTTY::Net::EventLoop.new
-      carol_addr = carol.on_connect(alice_addrs[1]) { |conn|
+      carol_addr = evloop.on_connect(alice_addrs[1]) { |conn|
         carol_connected = conn.remote_address
         conn.close
       }
 
       # Execute
-      thread_status = run_threads(:alice => alice, :bob => bob, :carol => carol)
+      evloop.main
 
       assert_equal alice_addrs.sort, alice_accepted.sort, "alice should accepted a connection on both ports"
       assert_equal alice_addrs[0], bob_connected, "bob should connect to alice's first port"
       assert_equal alice_addrs[1], carol_connected, "carol should connect to alice's second port"
-      assert_thread_status(thread_status)
     end
 
     def test_timer_works
@@ -193,36 +187,5 @@ class EventLoopTest < Test::Unit::TestCase
       evloop.main
       assert_equal [:a, :c], result
     end
-
-    private
-
-      def run_threads(event_loops, timeout=5)
-        thread_status = nil
-        threads = {}
-        begin
-          event_loops.each_pair { |name, event_loop| threads[name] = Thread.new { event_loop.main } }
-          t0 = Time.now
-          until Time.now - t0 >= timeout
-            break if threads.values.inject(true) { |r, t| r && !t.alive? }    # break if all threads are dead
-            sleep(0.5)
-          end
-          thread_status = {}
-          threads.each_pair { |name, t|
-            thread_status[name] = t.alive?
-          }
-        ensure
-          event_loops.values.each { |event_loop| event_loop.exit }
-          threads.values.each { |t| t.join }
-        end
-        thread_status
-      end
-
-      def assert_thread_status(thread_status)
-        expected = {}
-        thread_status.keys.each do |name|
-          expected[name] = false
-        end
-        assert_equal(expected, thread_status, "threads did not exit in specified time")
-      end
   end   # defined?(Java)
 end # class
