@@ -173,6 +173,27 @@ class EventLoopTest < Test::Unit::TestCase
       assert_thread_status(thread_status)
     end
 
+    def test_timer_works
+      evloop = ScripTTY::Net::EventLoop.new
+      t0 = Time.now
+      evloop.timer(1) { evloop.exit }
+      evloop.main
+      t1 = Time.now
+      delta = t1 - t0
+      assert delta >= 1.0, "Timeout too short: #{delta.inspect}"
+      assert delta < 5.0, "warning: Timeout too long: #{delta.inspect}"
+    end
+
+    def test_timer_cancel
+      result = []
+      evloop = ScripTTY::Net::EventLoop.new
+      c = evloop.timer(0.8) { result << :c }
+      b = evloop.timer(0.5) { result << :b }
+      a = evloop.timer(0.2) { result << :a; b.cancel }
+      evloop.main
+      assert_equal [:a, :c], result
+    end
+
     private
 
       def run_threads(event_loops, timeout=5)

@@ -36,6 +36,7 @@ module ScripTTY
         @read_buffer = ByteBuffer.allocate(4096)
         @exit_mutex = Mutex.new   # protects
         @exit_requested = false
+        @timer_queue = []    # sorted list of timers, in ascending order of expire_at time
       end
 
       # Instruct the main loop to exit.  Returns immediately.
@@ -94,10 +95,49 @@ module ScripTTY
         unparse_address(connect_address)    # Return [host, port] of address that will be connected to.
       end
 
+      # Invoke the specified callback after the specified number of seconds
+      # have elapsed.
+      #
+      # Return the ScripTTY::Net::EventLoop::Timer object for the timer.
+      def timer(delay, &callback)
+        raise ArgumentError.new("no block given") unless callback
+        new_timer = Timer.new(self, Time.now + delay, callback)
+        i = 0
+        while i < @timer_queue.length   # Insert new timer in the correct sort order
+          break if @timer_queue[i].expire_at > new_timer.expire_at
+          i += 1
+        end
+        @timer_queue.insert(i, new_timer)
+        @selector.wakeup
+        new_timer
+      end
+
       def main
         loop do
-          break if @selector.keys.empty? or @exit_mutex.synchronize{ @exit_requested }
-          @selector.select
+          break if (@selector.keys.empty? and @timer_queue.empty?) or @exit_mutex.synchronize{ @exit_requested }
+
+          # If there are any timers, schedule a wake-up for when the first
+          # timer expires.
+          next_timer = @timer_queue.first
+          if next_timer
+            timeout = (1000 * (next_timer.expire_at - Time.now)).to_f
+            timeout = nil if timeout <= 0.0
+          else
+            timeout = 0   # sleep indefinitely
+          end
+
+          # select(), unless the timeout has already expired
+          @selector.select(timeout) if timeout
+
+          # Invoke the callbacks for any expired timers
+          now = Time.now
+          until @timer_queue.empty? or now < @timer_queue.first.expire_at
+            timer = @timer_queue.shift
+            timer.send(:callback).call
+          end
+          timer = nil
+
+          # Handle channels that are ready for I/O operations
           @selector.selectedKeys.to_a.each do |k|
             handle_selection_key(k)
             @selector.selectedKeys.remove(k)
@@ -109,6 +149,12 @@ module ScripTTY
       end
 
       private
+
+        # Cancel the specified timer.
+        def cancel_timer(timer)
+          @timer_queue.delete(timer)
+          nil
+        end
 
         # Convert [host, port] to InetSocketAddress
         def parse_address(address)
@@ -265,6 +311,23 @@ module ScripTTY
             [socket_address.getAddress.getHostAddress, socket_address.getPort]
           end
       end
+
+      class Timer
+        attr_reader :expire_at
+        def initialize(master, expire_at, callback)
+          @master = master
+          @expire_at = expire_at
+          @callback = callback
+        end
+
+        def cancel
+          @master.send(:cancel_timer, self)
+        end
+
+        private
+          attr_reader :callback
+      end
+
     end
   end
 end
