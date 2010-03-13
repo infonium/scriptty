@@ -87,36 +87,51 @@ class EventLoopTest < Test::Unit::TestCase
     end
 
     def test_simple_echo_server
-      # XXX - There might be a race condition here.
-      log = []
+      server_log = []
+      client_log = []
+      timeout_log = []
       evloop = ScripTTY::Net::EventLoop.new
+      bytes_received = ""
       echo_addr = evloop.on_accept(['localhost', 0]) { |conn|
-        conn.on_close { log << :echo_closed }
-        conn.on_receive_bytes { |bytes| conn.write(bytes) }
+        conn.on_close { server_log << :echo_closed }
+        conn.on_receive_bytes { |bytes| bytes_received += bytes; conn.write(bytes) }
       }.local_address
       bytes_to_send = "Hello, world!".split("")
       evloop.on_connect(echo_addr) { |conn|
-        log << :client_open
+        client_log << :client_open
         conn.on_close {
-          log << :client_close
+          client_log << :client_close
           evloop.exit
         }
         write_next = Proc.new {
           if bytes_to_send.empty?
-            log << :client_close_graceful
+            client_log << :client_close_graceful
             conn.close
           else
-            log << :client_write unless log.last == :client_write
+            client_log << :client_write unless client_log.last == :client_write
             conn.write(bytes_to_send.shift, &write_next)
           end
         }
         write_next.call
       }
-      evloop.timer(5, :daemon => true) { log << :TIMEOUT; evloop.exit }   # Set 5-second hard timeout for this test
+      evloop.timer(5, :daemon => true) { timeout_log << :TIMEOUT; evloop.exit }   # Set 5-second hard timeout for this test
       evloop.main
 
-      expected_log = [ :client_open, :client_write, :client_close_graceful, :echo_closed, :client_close ]
-      assert_equal expected_log, log
+      assert_equal "Hello, world!", bytes_received
+
+      expected_logs = {
+        :client => [:client_open, :client_write, :client_close_graceful, :client_close],
+        :server => [:echo_closed],
+        :timeout => []
+      }
+
+      actual_logs = {
+        :client => client_log,
+        :server => server_log,
+        :timeout => timeout_log,
+      }
+
+      assert_equal expected_logs, actual_logs
     end
 
     # Start two sockets and make them talk to each other
