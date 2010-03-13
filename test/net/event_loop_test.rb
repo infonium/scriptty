@@ -252,28 +252,25 @@ class EventLoopTest < Test::Unit::TestCase
       assert_equal server_remote_addr, client_local_addr, "server_remote_addr should== client_local_addr"
     end
 
-#    # Regression test: A client event loop should exit on its own when a
-#    # connection is closed, even if there are no on_close or on_receive_bytes
-#    # callbacks defined.
-#    def test_client_exits_with_no_readers
-#      evloop = ScripTTY::Net::EventLoop.new
-#      server = evloop.listen(['localhost', 0])
-#      #server.on_accept { |conn| server.close }    # stop accepting new connections, but keep the current connection open
-#      #server.on_accept { |conn| server.close; conn.close }    # stop accepting new connections, and close the connection
-#      server.on_accept { |conn| server.close; conn.on_close{ nil } ; conn.close }    # stop accepting new connections, and close the connection DEBUG FIXME
-#
-#      client = evloop.connect(server.local_address)
-#      client.on_connect{ true }
-#      client.on_close { true }  # DEBUG FIXME
-#
-#      # Timeout
-#      timeout = false
-#      evloop.timer(5, :daemon => true) { timeout = true; evloop.exit }
-#
-#      evloop.main
-#
-#      assert !timeout, "TIMEOUT"
-#    end
+    # Regression test: The event loop should exit on its own when a
+    # connection is closed, even if there are no on_close or on_receive_bytes
+    # callbacks defined.
+    def test_client_and_server_exit_with_minimal_callbacks
+      evloop = ScripTTY::Net::EventLoop.new
+      server = evloop.listen(['localhost', 0])
+      #server.on_accept { |conn| server.close }    # stop accepting new connections, but keep the current connection open
+      server.on_accept { |conn| server.close; conn.close }    # stop accepting new connections, and close the connection
+
+      client = evloop.connect(server.local_address)
+
+      # Timeout
+      timeout = false
+      evloop.timer(5, :daemon => true) { timeout = true; evloop.exit }
+
+      evloop.main
+
+      assert !timeout, "TIMEOUT"
+    end
 
     def test_accept_multiple
       evloop = ScripTTY::Net::EventLoop.new

@@ -27,6 +27,11 @@ module ScripTTY
       # XXX - This complicated bit of code demonstrates that test-driven
       # development is not a panacea.  (A cleanup would be grand.)
 
+      # XXX - This code could use a cleanup.  In particular, the interestOps
+      # logic should be simplified, because when it's done wrong, we can get
+      # into a state where the event loop won't process events from particular
+      # channels.
+
       include_class 'java.net.InetSocketAddress'
       include_class 'java.nio.ByteBuffer'
       include_class 'java.nio.channels.SelectionKey'
@@ -79,7 +84,10 @@ module ScripTTY
         schan.configureBlocking(false)
         schan.socket.bind(bind_address)
         lw = ListeningSocketWrapper.new(self, schan)
-        schan.register(@selector, 0)
+        # We want OP_ACCEPT here (and later, OP_READ), so that we can tell
+        # when the connection is established/dropped, even if the user does
+        # not specifiy any on_accept or on_close/on_read_bytes callbacks.
+        schan.register(@selector, SelectionKey::OP_ACCEPT)
         selection_key = schan.keyFor(@selector)   # SelectionKey object
         selection_key.attach({:listening_socket_wrapper => lw})
         if block
@@ -118,7 +126,11 @@ module ScripTTY
         chan.socket.setOOBInline(true)    # Receive TCP URGent data (but not the fact that it's urgent) in-band
         chan.connect(connect_address)
         cw = OutgoingConnectionWrapper.new(self, chan, address)
-        chan.register(@selector, 0)   # FIXME: If the user doesn't set an on_connect and an on_close/on_receive_bytes callback, the main loop won't detect when the remote end closes the connection.
+        # We want OP_CONNECT here (and OP_READ after the connection is
+        # established) so that we can tell when the connection is
+        # established/dropped, even if the user does not specifiy any
+        # on_connect or on_close/on_read_bytes callbacks.
+        chan.register(@selector, SelectionKey::OP_CONNECT)
         selection_key = chan.keyFor(@selector)   # SelectionKey object
         selection_key.attach({:connection_wrapper => cw})
         if block_given?
@@ -226,6 +238,7 @@ module ScripTTY
                 end
               end
               if accepted
+                socket_channel.register(@selector, SelectionKey::OP_READ) # Register the channel with the selector
                 cw = ConnectionWrapper.new(self, socket_channel)
                 invoke_callback(k.channel, :on_accept, cw)
               end
@@ -249,6 +262,7 @@ module ScripTTY
               end
               if connected
                 k.interestOps(k.interestOps & ~SelectionKey::OP_CONNECT)    # We no longer care about connection status
+                k.interestOps(k.interestOps | SelectionKey::OP_READ)    # Now we care about incoming bytes (and disconnection)
                 invoke_callback(k.channel, :on_connect, cw)
               end
             end
@@ -334,7 +348,7 @@ module ScripTTY
         def set_on_connect_callback(channel, &callback) # :nodoc:
           channel_callback_hash(channel)[:on_connect] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
-          k.interestOps(k.interestOps | SelectionKey::OP_CONNECT)    # we want to when the socket is connected or when there are connection errors
+          #k.interestOps(k.interestOps | SelectionKey::OP_CONNECT)    # we want to when the socket is connected or when there are connection errors
           #k.interestOps(k.interestOps | SelectionKey::OP_CONNECT | SelectionKey::OP_READ)    # we want to when the socket is connected or when there are connection errors DEBUG FIXME
           nil
         end
@@ -417,7 +431,8 @@ module ScripTTY
         end
 
         def channel_callback_hash(channel) # :nodoc:
-          channel.register(@selector, 0) unless channel.keyFor(@selector)
+          raise "BUG" unless channel.keyFor(@selector)
+          #channel.register(@selector, 0) unless channel.keyFor(@selector)
           k = channel.keyFor(@selector)   # SelectionKey object
           k.attach({}) unless k.attachment
           k.attachment
