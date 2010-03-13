@@ -103,12 +103,12 @@ module ScripTTY
 
         def handle_client_close
           @output_file.client_close("Client connection closed") if @output_file
-          @server_connection.close
+          @server_connection.close if @server_connection
         end
 
         def handle_server_close
-          @output_file.client_close("Server connection closed") if @output_file
-          @client_connection.close
+          @output_file.server_close("Server connection closed") if @output_file
+          @client_connection.close if @client_connection
           @term = nil
         end
 
