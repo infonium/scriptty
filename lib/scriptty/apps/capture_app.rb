@@ -33,6 +33,7 @@ module ScripTTY
         @options = parse_options(argv)
         @console_password = ""   # TODO SECURITY FIXME
         @attached_consoles = []
+        @net = ScripTTY::Net::EventLoop.new
       end
 
       def detach_console(console)
@@ -41,7 +42,6 @@ module ScripTTY
 
       def main
         @output_file = Util::Transcript::Writer.new(File.open(@options[:output], "w")) if @options[:output]
-        @net = ScripTTY::Net::EventLoop.new
         @net.on_accept(@options[:console_addrs] || [], :multiple => true) do |conn|
           p = PasswordPrompt.new(conn, "Console password: ")
           p.authenticate { |password| password == @console_password }
@@ -60,11 +60,20 @@ module ScripTTY
         end
         @net.main
       ensure
-        @output_file.close if @output_file
+        if @output_file
+          @output_file.close
+          @output_file = nil
+        end
+      end
+
+      # Instruct the event loop to exit.
+      #
+      # Can be invoked by another thread.
+      def exit
+        @net.exit
       end
 
       private
-
 
         def handle_client_connected
           connect_to_server
