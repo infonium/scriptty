@@ -186,7 +186,13 @@ module ScripTTY
 
           # select(), unless the timeout has already expired
           puts "SELECT: to=#{timeout_millis.inspect} kk=#{@selector.keys.to_a.map{|k|k.attachment}.inspect} tt=#{@timer_queue.length}" if DEBUG
-          @selector.select(timeout_millis) if timeout_millis
+          if timeout_millis
+            # Return when something happens, or after timeout (if timeout_millis is non-zero)
+            @selector.select(timeout_millis)
+          else
+            # Non-blocking select
+            @selector.selectNow
+          end
           puts "DONE SELECT" if DEBUG
 
           # Invoke the callbacks for any expired timers

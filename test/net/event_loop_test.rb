@@ -63,6 +63,21 @@ class EventLoopTest < Test::Unit::TestCase
       assert_match /^java.net.ConnectException: Connection refused/, connect_error.message
     end
 
+    def test_channel_gets_deregistered_after_close
+      selector_keys = nil
+      evloop = ScripTTY::Net::EventLoop.new
+      evloop.connect(CONNECTION_REFUSE_ADDR) { |c|
+        c.on_connect_error { |e|
+          # On the next call to select(), the SelectionKey should be gone.
+          evloop.timer(0) {
+            selector_keys = evloop.instance_eval("@selector").keys.to_a
+          }
+        }
+      }
+      evloop.main
+      assert_equal [], selector_keys, "Channels should be deregistered with the Selector when a channel is closed"
+    end
+
     # An listening socket should be closed when the event loop finishes
     def test_listening_socket_gets_closed_on_exit
       # Create an event loop, bind a socket, then exit the event loop.
