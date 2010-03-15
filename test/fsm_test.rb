@@ -251,12 +251,15 @@ class FSMTest < Test::Unit::TestCase
       }
     EOF
     assert_equal 1, fsm.next_state
+    assert fsm.initial_state?
 
     fsm.process("a")
     assert_not_equal 1, fsm.next_state
+    assert fsm.initial_state?
 
     fsm.reset!
     assert_equal 1, fsm.next_state
+    assert fsm.initial_state?
 
     assert_raise ScripTTY::Util::FSM::NoMatch do
       fsm.process("b")

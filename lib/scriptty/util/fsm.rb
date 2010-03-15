@@ -98,6 +98,11 @@ module ScripTTY # :nodoc:
         nil
       end
 
+      # Return true if we are at the initial state (i.e. @state == 1 and !@redirect)
+      def initial_state?
+        @state == 1 && !@redirect
+      end
+
       # Invoke the callback for the specified event.
       def fire_event(event)
         @callback.__send__(@callback_method, event.to_sym, self) if @callback
@@ -113,7 +118,7 @@ module ScripTTY # :nodoc:
 
         # Reset @input_sequence if we are at the initial state.  Otherwise,
         # append the current input to @input_sequence.
-        if @state == 1 && !@redirect
+        if initial_state?
           @input_sequence = [input]
         else
           @input_sequence << input
