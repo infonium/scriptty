@@ -20,6 +20,8 @@ require 'optparse'
 require 'scriptty/net/event_loop'
 require 'scriptty/util/transcript/writer'
 require 'scriptty/term'
+require 'logger'
+require 'stringio'
 
 module ScripTTY
   module Apps
@@ -34,10 +36,16 @@ module ScripTTY
         @console_password = ""   # TODO SECURITY FIXME
         @attached_consoles = []
         @net = ScripTTY::Net::EventLoop.new
+        @log_stringio = StringIO.new
+        @log = Logger.new(@log_stringio)
       end
 
       def detach_console(console)
         @attached_consoles.delete(console)
+      end
+
+      def log_messages
+        ([""]*10 + @log_stringio.string.split("\n"))[-10..-1].map{|line| line.sub(/^.*?\]/, '')}
       end
 
       def main
@@ -73,7 +81,21 @@ module ScripTTY
         @net.exit
       end
 
+      def handle_console_command_entered(cmd)
+        case cmd
+        when /^'(.*)$/i    # comment
+          comment = $1.strip
+          @output_file.info("Comment: #{comment}") if @output_file
+          log.info("Comment: #{comment}")
+        else
+          log.warn("Unknown console command: #{cmd}")
+        end
+        @last_command = cmd
+      end
+
       private
+
+        attr_reader :log
 
         def handle_client_connected
           connect_to_server
@@ -83,7 +105,7 @@ module ScripTTY
           @term = ScripTTY::Term.new(@options[:term])
           @term.on_unknown_sequence do |sequence|
             @output_file.info("Unknown escape sequence", sequence) if @output_file
-            puts "Unknown escape sequence: #{sequence.inspect}" # DEBUG FIXME
+            log.debug("Unknown escape sequence: #{sequence.inspect}")
           end
         end
 
