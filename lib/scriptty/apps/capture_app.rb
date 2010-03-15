@@ -87,6 +87,11 @@ module ScripTTY
           end
         end
 
+        def handle_server_connect_error(e)
+          @output_file.info("Server connection error #{e}") if @output_file   # TODO - add a separate transcript record
+          @client_connection.close if @client_connection
+        end
+
         def handle_client_receive_bytes(bytes)
           return unless @server_connection    # Ignore bytes received from client until server is connected.
           @output_file.from_client(bytes) if @output_file
@@ -113,12 +118,15 @@ module ScripTTY
         end
 
         def connect_to_server
-          @net.on_connect(@options[:connect_addr]) do |server|
-            @output_file.server_open(*server.remote_address) if @output_file
-            @server_connection = server
-            @server_connection.on_receive_bytes { |bytes| handle_server_receive_bytes(bytes) }
-            @server_connection.on_close { handle_server_close; @server_connection = nil }
-            handle_server_connected
+          @net.connect(@options[:connect_addr]) do |server_conn|
+            server_conn.on_connect_error { |e| handle_server_connect_error(e) }
+            server_conn.on_connect {
+              @output_file.server_open(*server_conn.remote_address) if @output_file
+              @server_connection = server_conn
+              handle_server_connected
+            }
+            server_conn.on_receive_bytes { |bytes| handle_server_receive_bytes(bytes) }
+            server_conn.on_close { handle_server_close; @server_connection = nil }
           end
         end
 
