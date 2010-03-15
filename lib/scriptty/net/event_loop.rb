@@ -220,7 +220,7 @@ module ScripTTY
           att = k.attachment
           case k.channel
           when ServerSocketChannel
-            puts "SELECTED ServerSocketChannel: valid:#{k.valid?} connectable:#{k.connectable?} writable:#{k.writable?} readable:#{k.readable?}" if DEBUG
+            puts "SELECTED ServerSocketChannel: valid:#{k.valid?} connectable:#{k.connectable?} writable:#{k.writable?} readable:#{k.readable?} interestOps:#{k.interestOps.inspect} readyOps:#{k.readyOps}" if DEBUG
             if k.valid? and k.acceptable?
               lw = att[:listening_socket_wrapper]
               accepted = false
@@ -245,8 +245,16 @@ module ScripTTY
             end
 
           when SocketChannel
-            puts "SELECTED SocketChannel: valid:#{k.valid?} connectable:#{k.connectable?} writable:#{k.writable?} readable:#{k.readable?}" if DEBUG
-            if k.valid? and k.connectable?
+            puts "SELECTED SocketChannel: valid:#{k.valid?} connectable:#{k.connectable?} writable:#{k.writable?} readable:#{k.readable?} interestOps:#{k.interestOps.inspect} readyOps:#{k.readyOps}" if DEBUG
+            if k.valid? and (k.connectable? or !att[:connect_finished])
+              # WORKAROUND: On some platforms (Mac OS X 10.5, Java 1.5.0_22,
+              # JRuby 1.4.0) SelectionKey#isConnectable returns 0 when a
+              # connection error would occur, so we would never call
+              # finishConnect and therefore keep looping infinitely over the
+              # select() call.  To work around this, we add this flag to the
+              # channel hash and check it, rather than relying on
+              # k.connectable? returning true.
+              att[:connect_finished] = true
               cw = att[:connection_wrapper]
               connected = false
               begin
