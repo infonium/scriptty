@@ -53,9 +53,9 @@
         'A' => t_reset
         'F' => t_erase_unprotected
 #        'I' => t_delete_line
-#        'Q' => {
-#            * => t_set_cursor_type
-#        }
+        'Q' => {
+            * => t_set_cursor_type
+        }
 #        '\\' => t_delete_between_margins
 #        '@' => t_select_ansi_mode
     }

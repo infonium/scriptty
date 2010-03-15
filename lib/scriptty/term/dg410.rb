@@ -451,6 +451,7 @@ module ScripTTY # :nodoc:
         def t_reverse_video_off(fsm) end # TODO
         def t_dim_on(fsm) end # TODO
         def t_dim_off(fsm) end # TODO
+        def t_set_cursor_type(fsm) end # TODO
 
         # Proprietary escape code
         # <036> ~ <2-byte-command> <n> <n*bytes>
