@@ -154,54 +154,54 @@ class EventLoopTest < Test::Unit::TestCase
       evloop = ScripTTY::Net::EventLoop.new
       expected_logs = {}
 
-      alice_done = bob_done = false   # XXX - We should do graceful TCP shutdown here instead.
-
-      # Alice
-      expected_logs[:alice] = [ "accepted", "said hello", "received", "said goodbye", "closed" ]
-      alice_log = []
-      alice_addr = evloop.on_accept(["localhost", 0]) { |conn|
-        alice_log << "accepted"
-        conn.write("Hello, my name is Alice.  What is your name?\n") { alice_log << "said hello" }
+      # Server
+      expected_logs[:server] = [ "accepted", "said hello", "received", "said goodbye", "closed" ]
+      server_log = []
+      server = evloop.listen(['localhost', 0])
+      server.on_accept { |conn|
+        server_log << "accepted"
+        conn.write("Hello, my name is Alice.  What is your name?\n") { server_log << "said hello" }
         buffer = ""
         conn.on_receive_bytes { |bytes|
-          alice_log << "received" unless alice_log.last == "received"
+          server_log << "received" unless server_log.last == "received"
           buffer += bytes
           if buffer =~ /\A(My name is ([^.]*)\.)$/
             name = $2
             buffer = "" # this would be buggy if we wanted to do more than this
-            conn.write("Goodbye, #{name}!\n") { alice_log << "said goodbye"; conn.close }
+            conn.write("Goodbye, #{name}!\n") { server_log << "said goodbye"; conn.close }
           end
         }
-        conn.on_close { alice_log << "closed"; alice_done = true; evloop.exit if bob_done }
-      }.local_address
+        conn.on_close { server_log << "closed"; server.close }
+      }
 
-      # Bob
-      expected_logs[:bob] = [ "connected", "received", "said name", "received", "closed" ]
-      bob_log = []
-      evloop.on_connect(alice_addr) { |conn|
-        bob_log << "connected"
+      # Client
+      expected_logs[:client] = [ "connected", "received", "said name", "received", "closed" ]
+      client_log = []
+      client = evloop.connect(server.local_address)
+      client.on_connect { |conn|
+        client_log << "connected"
         buffer = ""
         conn.on_receive_bytes { |bytes|
-          bob_log << "received" unless bob_log.last == "received"
+          client_log << "received" unless client_log.last == "received"
           buffer += bytes
           if buffer =~ /What is your name\?/
             buffer = "" # this would be buggy if we wanted to do more than this
-            conn.write("My name is Bob.\n") { bob_log << "said name" }
+            conn.write("My name is Bob.\n") { client_log << "said name" }
           end
         }
-        conn.on_close { bob_log << "closed"; bob_done = true; evloop.exit if alice_done }
+        conn.on_close { client_log << "closed" }
       }
 
-      # Set 5-second hard timeout for this test
+      # Set 10-second hard timeout for this test
       timeout = false
       expected_logs[:timeout] = false
-      evloop.timer(5, :daemon => true) { timeout = true; evloop.exit }
+      evloop.timer(10, :daemon => true) { timeout = true; evloop.exit }
 
       # Execute
       evloop.main
 
       # Assertions
-      assert_equal(expected_logs, {:timeout => timeout, :alice => alice_log, :bob => bob_log}, "logs not what was expected")
+      assert_equal(expected_logs, {:timeout => timeout, :server => server_log, :client => client_log}, "logs not what was expected")
     end
 
     def test_run_empty
@@ -243,8 +243,8 @@ class EventLoopTest < Test::Unit::TestCase
       }
       client.on_close { client_log.puts "client_close" }
 
-      # Set 5-second hard timeout for this test
-      evloop.timer(5, :daemon => true) { timeout_log.puts "TIMEOUT"; evloop.exit }
+      # Set 10-second hard timeout for this test
+      evloop.timer(10, :daemon => true) { timeout_log.puts "TIMEOUT"; evloop.exit }
 
       evloop.main
 
