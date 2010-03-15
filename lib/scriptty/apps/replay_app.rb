@@ -47,7 +47,7 @@ module ScripTTY
       end
 
       def log_messages
-        ([""]*10 + @log_stringio.string.split("\n"))[-10..-1]
+        ([""]*10 + @log_stringio.string.split("\n"))[-10..-1].map{|line| line.sub(/^.*?\]/, '')}
       end
 
       def main
@@ -84,12 +84,14 @@ module ScripTTY
           else
             log.warn("No previous command entered")
           end
+          return nil
         when /^(\d*)(n|next)$/i    # replay next step
-          count = $1 ? $1.to_i : ""
+          count = $1 ? $1.to_i : 1
           count.times { replay_next }
         else
           log.warn("Unknown console command: #{cmd}")
         end
+        @last_command = cmd
       end
 
       # Instruct the event loop to exit.
@@ -136,11 +138,11 @@ module ScripTTY
                 line = infile.readline
                 timestamp, type, args = reader.parse_line(line)
                 if type == :from_server
-                  @transcript << [line.strip, args[0]]
+                  @transcript << ["(#{line_num}) #{line.strip}", args[0]]
                 elsif type == :server_parsed
-                  @transcript << [line.strip, args[1]]
+                  @transcript << ["(#{line_num}) #{line.strip}", args[1]]
                 else
-                  @transcript << [line.strip, nil]
+                  @transcript << ["(#{line_num}) #{line.strip}", nil]
                 end
               end
             end
@@ -150,12 +152,13 @@ module ScripTTY
         def replay_next
           if @next_bytes_to_send
             @client_connection.write(@next_bytes_to_send) { refresh_consoles }
+            @term.feed_bytes(@next_bytes_to_send)
             @next_bytes_to_send = nil
           end
           until @transcript.empty?
             display, bytes = @transcript.shift
             if bytes
-              log.debug("DATA: #{display}")
+              log.debug("NXTD: #{display}")   # next data
               @next_bytes_to_send = bytes
               break
             else

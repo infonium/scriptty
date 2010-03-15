@@ -47,6 +47,10 @@ module ScripTTY
           if @app.respond_to?(:log_messages)
             screen_lines << ""
             @app.log_messages.each do |line|
+              if line.length > @app.term.width
+                line = line[0,@app.term.width-1]
+                line += ">"
+              end
               screen_lines << ":#{line}"
             end
           end
