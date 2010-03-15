@@ -27,11 +27,6 @@ module ScripTTY
       # XXX - This complicated bit of code demonstrates that test-driven
       # development is not a panacea.  (A cleanup would be grand.)
 
-      # XXX - This code could use a cleanup.  In particular, the interestOps
-      # logic should be simplified, because when it's done wrong, we can get
-      # into a state where the event loop won't process events from particular
-      # channels.
-
       include_class 'java.net.InetSocketAddress'
       include_class 'java.nio.ByteBuffer'
       include_class 'java.nio.channels.SelectionKey'
@@ -130,7 +125,7 @@ module ScripTTY
         # established) so that we can tell when the connection is
         # established/dropped, even if the user does not specifiy any
         # on_connect or on_close/on_read_bytes callbacks.
-        chan.register(@selector, SelectionKey::OP_CONNECT)
+        chan.register(@selector, SelectionKey::OP_CONNECT | SelectionKey::OP_READ)
         selection_key = chan.keyFor(@selector)   # SelectionKey object
         selection_key.attach({:connection_wrapper => cw})
         if block_given?
@@ -275,8 +270,6 @@ module ScripTTY
                 end
               end
               if connected
-                k.interestOps(k.interestOps & ~SelectionKey::OP_CONNECT)    # We no longer care about connection status
-                k.interestOps(k.interestOps | SelectionKey::OP_READ)    # Now we care about incoming bytes (and disconnection)
                 invoke_callback(k.channel, :on_connect, cw)
               end
             end
@@ -348,36 +341,30 @@ module ScripTTY
         def set_on_accept_callback(channel, &callback) # :nodoc:
           channel_callback_hash(channel)[:on_accept] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
-          k.interestOps(k.interestOps | SelectionKey::OP_ACCEPT)
           nil
         end
 
         def set_on_accept_error_callback(channel, &callback) # :nodoc:
           channel_callback_hash(channel)[:on_accept_error] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
-          k.interestOps(k.interestOps | SelectionKey::OP_ACCEPT)
           nil
         end
 
         def set_on_connect_callback(channel, &callback) # :nodoc:
           channel_callback_hash(channel)[:on_connect] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
-          #k.interestOps(k.interestOps | SelectionKey::OP_CONNECT)    # we want to when the socket is connected or when there are connection errors
-          #k.interestOps(k.interestOps | SelectionKey::OP_CONNECT | SelectionKey::OP_READ)    # we want to when the socket is connected or when there are connection errors DEBUG FIXME
           nil
         end
 
         def set_on_connect_error_callback(channel, &callback) # :nodoc:
           channel_callback_hash(channel)[:on_connect_error] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
-          k.interestOps(k.interestOps | SelectionKey::OP_CONNECT)    # we want to when the socket is connected or when there are connection errors
           nil
         end
 
         def set_on_receive_bytes_callback(channel, &callback) # :nodoc:
           channel_callback_hash(channel)[:on_receive_bytes] = callback
           k = channel.keyFor(@selector)   # SelectionKey object
-          k.interestOps(k.interestOps | SelectionKey::OP_READ)    # we want to know when bytes are received
           nil
         end
 
@@ -386,11 +373,6 @@ module ScripTTY
 
           # we want to know when the connection closes
           k = channel.keyFor(@selector)   # SelectionKey object
-          if channel.is_a?(ServerSocketChannel)
-            k.interestOps(k.interestOps | SelectionKey::OP_ACCEPT)
-          else  # SocketChannel
-            k.interestOps(k.interestOps | SelectionKey::OP_READ)
-          end
           nil
         end
 
