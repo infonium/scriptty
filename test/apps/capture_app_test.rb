@@ -17,13 +17,16 @@
 # along with ScripTTY.  If not, see <http://www.gnu.org/licenses/>.
 
 require File.dirname(__FILE__) + "/../test_helper.rb"
-require 'scriptty/apps/capture_app'
-require 'scriptty/net/event_loop'
 require 'scriptty/util/transcript/reader'
 require 'tempfile'
 
 class CaptureAppTest < Test::Unit::TestCase
   LISTEN_PORT = 46457   # Randomly-chosen port; change if necessary
+
+  def setup
+    require 'scriptty/apps/capture_app'
+    require 'scriptty/net/event_loop'
+  end
 
   def test_basic
     app = nil
