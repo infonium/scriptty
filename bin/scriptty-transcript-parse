@@ -1,0 +1,4 @@
+#!/usr/bin/env jruby
+
+require 'scriptty/apps/transcript_parse_app'
+ScripTTY::Apps::TranscriptParseApp.new(ARGV).main
