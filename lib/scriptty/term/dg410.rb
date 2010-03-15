@@ -273,11 +273,12 @@ module ScripTTY # :nodoc:
           true
         end
 
-        # Erase the current line.  The cursor position is unchanged.
+        # Erase the current (or specified) line.  The cursor position is unchanged.
         # Return true.
-        def erase_line!
-          @glyphs.replace_at(@cursor.row, 0, " "*@width)
-          @attrs.replace_at(@cursor.row, 0, " "*@width)
+        def erase_line!(row=nil)
+          row = @cursor.row unless row
+          @glyphs.replace_at(row, 0, " "*@width)
+          @attrs.replace_at(row, 0, " "*@width)
           true
         end
 
@@ -374,12 +375,17 @@ module ScripTTY # :nodoc:
           @cursor.pos = [0,0]
         end
 
-        # Erase all characters starting at the cursor and extending to the end of the line (window).
+        # Erase all characters starting at the cursor and extending to the end of the window.
         def t_erase_unprotected(fsm)
+          # Erase to the end of the current line
           erase_to_end_of_line!
+          # Erase subsequent lines to the end of the window.
+          (@cursor.row+1..@height-1).each do |row|
+            erase_line!(row)
+          end
         end
 
-        # Erase all characters starting at the cursor and extending to the end of the line (right margin).
+        # Erase all characters starting at the cursor and extending to the end of the line.
         def t_erase_end_of_line(fsm)
           erase_to_end_of_line!
         end
