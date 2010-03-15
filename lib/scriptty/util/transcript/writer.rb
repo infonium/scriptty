@@ -28,6 +28,13 @@ module ScripTTY
           @io = io
           @start_time = Time.now
           @override_timestamp = nil
+          if block_given?
+            begin
+              yield self
+            ensure
+              close
+            end
+          end
         end
 
         def close
