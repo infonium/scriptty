@@ -174,21 +174,24 @@ module ScripTTY
           next_timer = @timer_queue.first
           if next_timer
             timeout_millis = (1000 * (next_timer.expire_at - Time.now)).to_i
-            timeout_millis = nil if timeout_millis <= 0
+            timeout_millis = nil if timeout_millis <= 0   # return immediately
           else
             timeout_millis = 0   # sleep indefinitely
           end
 
           # select(), unless the timeout has already expired
-          puts "SELECT: to=#{timeout_millis.inspect} kk=#{@selector.keys.to_a.map{|k|k.attachment}.inspect} tt=#{@timer_queue.length}" if DEBUG
-          if timeout_millis
+          puts "SELECT: timeout=#{timeout_millis.inspect} selector_keys_length=#{@selector.keys.to_a.length} tt=#{@timer_queue.length}" if DEBUG
+          if timeout_millis == 0
+            # wait indefinitely
+            rv = @selector.select
+          elsif timeout_millis
             # Return when something happens, or after timeout (if timeout_millis is non-zero)
-            @selector.select(timeout_millis)
+            rv = @selector.select(timeout_millis)
           else
-            # Non-blocking select
-            @selector.selectNow
+            # Return immediately
+            rv = @selector.selectNow
           end
-          puts "DONE SELECT" if DEBUG
+          puts "DONE SELECT (return: #{rv})" if DEBUG
 
           # Invoke the callbacks for any expired timers
           now = Time.now
@@ -197,6 +200,8 @@ module ScripTTY
             timer.send(:callback).call
           end
           timer = nil
+
+          puts "selectedKeys length: #{@selector.selectedKeys.to_a.length}" if DEBUG
 
           # Handle channels that are ready for I/O operations
           @selector.selectedKeys.to_a.each do |k|
