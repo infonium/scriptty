@@ -47,8 +47,21 @@ module ScripTTY
           "Cp" => :client_parsed,  # parsed escape sequence from client
         }
 
-        def initialize
+        def initialize(io=nil)
           @current_line = 0
+          @io = io
+        end
+
+        def next_entry
+          raise TypeError.new("no I/O object associated with this reader") unless @io
+          return nil if @io.eof?
+          line = @io.readline
+          return nil unless line
+          parse_line(line)
+        end
+
+        def close
+          @io.close if @io
         end
 
         def parse_line(line)
