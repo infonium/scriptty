@@ -1,0 +1,5 @@
+#!/usr/bin/env jruby
+
+require 'scriptty/apps/replay_app'
+puts "\007Starting" # DEBUG FIXME
+ScripTTY::Apps::ReplayApp.new(ARGV).main
