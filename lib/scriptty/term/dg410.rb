@@ -24,7 +24,7 @@ require 'scriptty/util/fsm'
 require 'set'
 
 module ScripTTY # :nodoc:
-  module Term # :nodoc:
+  module Term
     class DG410
       require 'scriptty/term/dg410/parser'  # we want to create the DG410 class here before parser.rb reopens it
 

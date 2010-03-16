@@ -19,7 +19,7 @@
 require 'scriptty/term/dg410'
 
 module ScripTTY # :nodoc:
-  module Term # :nodoc:
+  module Term
     class DG410 # reopen
       class Parser
         PARSER_DEFINITION = File.read(File.join(File.dirname(__FILE__), "dg410-escapes.txt"))

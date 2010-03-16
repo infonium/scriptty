@@ -24,7 +24,7 @@ require 'scriptty/util/fsm'
 require 'set'
 
 module ScripTTY # :nodoc:
-  module Term # :nodoc:
+  module Term
     class XTerm
 
       PARSER_DEFINITION = File.read(File.join(File.dirname(__FILE__), "xterm/xterm-escapes.txt"))
