@@ -29,7 +29,8 @@ class ParserTest < Test::Unit::TestCase
     expected = [{
       :name => "simple_pattern",
       :properties => {
-        "rectangle" => [3,4,6,8],
+        "position" => [3,4],
+        "size" => [4,5],
         "char_cursor" => "@",
         "char_ignore" => ".",
         "char_field" => "#",
@@ -52,7 +53,8 @@ class ParserTest < Test::Unit::TestCase
     expected = [{
       :name => "simple_pattern",
       :properties => {
-        "rectangle" => [3,4,6,8],
+        "position" => [3,4],
+        "size" => [4,5],
         "cursor_pos" => [1, 1],
         "char_ignore" => ".",
         "char_field" => "#",
@@ -77,7 +79,8 @@ class ParserTest < Test::Unit::TestCase
       {
         :name => "simple_pattern_1",
         :properties => {
-          "rectangle" => [3,4,6,8],
+          "position" => [3,4],
+          "size" => [4,5],
           "char_cursor" => "@",
           "char_ignore" => ".",
           "char_field" => "#",
@@ -92,7 +95,8 @@ class ParserTest < Test::Unit::TestCase
       {
         :name => "simple_pattern_2",
         :properties => {
-          "rectangle" => [0,0,3,4],
+          "position" => [0,0],
+          "size" => [4,5],
           "char_cursor" => "~",
           "char_ignore" => ".",
           "char_field" => "#",
@@ -140,7 +144,8 @@ class ParserTest < Test::Unit::TestCase
     expected = [{
       :name => "unicode_pattern",
       :properties => {
-        "rectangle" => [3,4,6,8],
+        "position" => [3,4],
+        "size" => [4,5],
         "char_cursor" => "\xe2\x96\x88", # U+2588 FULL BLOCK
         "char_field" => "\xc3\x98",      # U+00D8 LATIN CAPITAL LETTER O WITH STROKE
         "char_ignore" => ".",            # U+002E FULL STOP
@@ -164,9 +169,9 @@ class ParserTest < Test::Unit::TestCase
   # Unicode NFC normalization should be performed.  This avoids user confusion if they enter two different representations of the same character.
   def test_nfd_to_nfc_normalization
     expected = [{:name => "test", :properties => {
-      "test" => "\xc3\xa7",   # U+00E7 LATIN SMALL LETTER C WITH CEDILLA
+      "char_cursor" => "\xc3\xa7",   # U+00E7 LATIN SMALL LETTER C WITH CEDILLA
     }}]
-    input = %Q([test]\ntest: "c\xcc\xa7")   # ASCII "c" followed by U+0327 COMBINING CEDILLA
+    input = %Q([test]\nchar_cursor: "c\xcc\xa7")   # ASCII "c" followed by U+0327 COMBINING CEDILLA
     result = []
     ScripTTY::ScreenPattern::Parser.parse(input) do |screen|
       result << screen

@@ -22,7 +22,7 @@ require 'strscan'
 
 module ScripTTY
   module ScreenPattern
-    # Low-level (syntax only) parser for screen pattern files
+    # Parser for screen pattern files
     #
     # Parses a file containing screen patterns, yielding hashes.
     class Parser
@@ -48,6 +48,10 @@ module ScripTTY
       SCREENNAME_LINE = /^\[(#{IDENTIFIER})\]\s*$/no
       BLANK_LINE = /^\s*$/no
       COMMENT_LINE = /^#{OPTIONAL_COMMENT}$/no
+
+      SINGLE_CHAR_PROPERTIES = %w( char_cursor char_ignore char_field )
+      TWO_TUPLE_PROPERTIES = %w( position size cursor_pos )
+      RECOGNIZED_PROPERTIES = SINGLE_CHAR_PROPERTIES + TWO_TUPLE_PROPERTIES + %w( rectangle text )
 
       class <<self
         def parse(s, &block)
@@ -113,6 +117,7 @@ module ScripTTY
                 :propname => k,
                 :delimiter => v_heredoc,
                 :content => "",
+                :lineno => @lineno,
               }
               @state = :heredoc
             else
@@ -153,7 +158,34 @@ module ScripTTY
         end
 
         def set_screen_property(k,v)
-          @screen_properties[k] = v
+          parse_fail("Unrecognized property name #{k}", property_lineno) unless RECOGNIZED_PROPERTIES.include?(k)
+          validate_single_char_property(k, v) if SINGLE_CHAR_PROPERTIES.include?(k)
+          validate_tuple_property(k, v, 2) if TWO_TUPLE_PROPERTIES.include?(k)
+          if k == "rectangle"
+            set_screen_property("position", v[0,2])
+            set_screen_property("size", [v[2]-v[0]+1, v[3]-v[1]+1])
+          else
+            @screen_properties[k] = v
+          end
+        end
+
+        def validate_single_char_property(k, v)
+          c = v.chars.to_a    # Split field into array of single-character (but possibly multi-byte) strings
+          unless c.length == 1
+            parse_fail("#{k} must be a single character or Unicode code point", property_lineno)
+          end
+        end
+
+        def validate_tuple_property(k, v, length=2)
+          parse_fail("#{k} must be a #{length}-tuple", property_lineno) unless v.length == length
+          parse_fail("#{k} must contain positive integers", property_lineno) unless v[0] >=0 and v[1] >= 0
+        end
+
+        # Return the line number of the current property.
+        #
+        # This will be either @lineno, or @heredoc[:lineno] (if the latter is present)
+        def property_lineno
+          @heredoc ? @heredoc[:lineno] : @lineno
         end
 
         def parse_string(str)
@@ -211,8 +243,9 @@ module ScripTTY
           str[2..-1]
         end
 
-        def parse_fail(message=nil)
-          raise ArgumentError.new("error:line #{@lineno}: #{message || 'parse error'}")
+        def parse_fail(message=nil, line=nil)
+          line ||= @lineno
+          raise ArgumentError.new("error:line #{line}: #{message || 'parse error'}")
         end
 
         # Pre-process an input string.
