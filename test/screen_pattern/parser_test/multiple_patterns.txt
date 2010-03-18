@@ -1,0 +1,27 @@
+[simple_pattern_1]
+rectangle: (3,4) - (6,8)
+char_cursor: "@"
+char_ignore: "."
+char_field: "#"
+text: <<END
++-----+
+|@.###| ("field1")
+|#.#.#| ("apple", "orange", "banana")
+|##.##| ("foo",)
+|##.##| (,"bar")
++-----+
+END
+
+[simple_pattern_2]
+rectangle: (0 ,0 )- ( 3, 4)
+char_cursor: "~"
+char_ignore: "."
+char_field: "#"
+text: <<END
++-----+
+|~:###| ("field1")
+|#.#.#| (,,)
+|Hello|
+|World|
++-----+
+END

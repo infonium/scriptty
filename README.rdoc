@@ -11,6 +11,7 @@ None yet, but DG410 and limited xterm support is planned.
 
 - JRuby
 - Treetop
+- Multibyte
 
 = License
 

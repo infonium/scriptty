@@ -1,0 +1,14 @@
+# Saved in Notepad++ as "UTF-8 without BOM"
+[unicode_pattern]
+rectangle: (3,4)-(6,8)
+char_cursor: "█"
+char_field: "Ø"
+char_ignore: "."
+text: <<END
++-----+
+|█.ØØØ| ("field1")
+|Ø.Ø.Ø| ("apple", "orange", "banana")
+|ØØ.ØØ| ("foo",)
+|ØØ.ØØ| (,"bar")
++-----+
+END

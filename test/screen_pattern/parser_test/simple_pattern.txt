@@ -1,0 +1,16 @@
+# Basic ASCII screen pattern
+[simple_pattern]
+# rectangle is (row0, col0) - (row1, col1)
+rectangle: (3,4)-(6,8)
+char_cursor: "@"
+char_ignore: "."
+text: <<END
++-----+
+|@.###| ("field1")
+|#.#.#| ("apple", "orange", "banana")
+|##.##| ("foo",)
+|##.##| (,"bar")
++-----+
+END
+# Fields may occur after the body
+char_field: "#"
