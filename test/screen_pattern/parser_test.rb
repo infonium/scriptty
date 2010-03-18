@@ -122,6 +122,19 @@ class ParserTest < Test::Unit::TestCase
     end
   end
 
+  # Unicode NFC normalization should be performed.  This avoids user confusion if they enter two different representations of the same character.
+  def test_nfd_to_nfc_normalization
+    expected = [{:name => "test", :properties => {
+      "test" => "\xc3\xa7",   # U+00E7 LATIN SMALL LETTER C WITH CEDILLA
+    }}]
+    input = %Q([test]\ntest: "c\xcc\xa7")   # ASCII "c" followed by U+0327 COMBINING CEDILLA
+    result = []
+    ScripTTY::ScreenPattern::Parser.parse(input) do |screen|
+      result << screen
+    end
+    assert_equal expected, result, "NFC unicode normalization should work correctly"
+  end
+
   private
 
     def read_file(basename)
