@@ -34,6 +34,8 @@ module ScripTTY
       # NOTE: The //n flag is not preserved by Regexp#to_s; you need the //n
       # flag on the regexp object that is actually being matched.
 
+      COMMENT = /\s*#.*$/no
+      OPTIONAL_COMMENT = /#{COMMENT}|\s*$/no
       IDENTIFIER = /[a-zA-Z0-9_]+/n
       RECTANGLE = /\(\s*\d+\s*,\s*\d+\s*\)\s*-\s*\(\s*\d+\s*,\s*\d+\s*\)/n
       STR_UNESCAPED = /[^"\\\t\r\n]/n
@@ -44,7 +46,7 @@ module ScripTTY
       HEREDOCSTART = /<<#{IDENTIFIER}/no
       SCREENNAME_LINE = /^\[(#{IDENTIFIER})\]\s*$/no
       BLANK_LINE = /^\s*$/no
-      COMMENT_LINE = /^#.*$/no
+      COMMENT_LINE = /^#{OPTIONAL_COMMENT}$/no
 
       class <<self
         def parse(s, &block)
@@ -97,7 +99,7 @@ module ScripTTY
             handle_done_screen
             return handle_start_state
           end
-          if @line =~ /^(#{IDENTIFIER})\s*:\s*(?:(#{STRING})|(#{RECTANGLE})|(#{HEREDOCSTART}))\s*$/no
+          if @line =~ /^(#{IDENTIFIER})\s*:\s*(?:(#{STRING})|(#{RECTANGLE})|(#{HEREDOCSTART}))#{OPTIONAL_COMMENT}$/no
             k, v_str, v_rect, v_heredoc = [$1, parse_string($2), parse_rectangle($3), parse_heredocstart($4)]
             if v_str
               @screen_properties[k] = v_str
