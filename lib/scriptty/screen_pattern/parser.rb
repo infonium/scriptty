@@ -103,15 +103,17 @@ module ScripTTY
           if @line =~ /^(#{IDENTIFIER})\s*:\s*(?:(#{STRING})|(#{RECTANGLE})|(#{HEREDOCSTART}|(#{TUPLE})))#{OPTIONAL_COMMENT}$/no
             k, v_str, v_rect, v_heredoc, v_tuple = [$1, parse_string($2), parse_rectangle($3), parse_heredocstart($4), parse_tuple($5)]
             if v_str
-              @screen_properties[k] = v_str
+              set_screen_property(k, v_str)
             elsif v_rect
-              @screen_properties[k] = v_rect
+              set_screen_property(k, v_rect)
             elsif v_tuple
-              @screen_properties[k] = v_tuple
+              set_screen_property(k, v_tuple)
             elsif v_heredoc
-              @heredoc_propname = k
-              @heredoc_delimiter = v_heredoc
-              @heredoc_content = ""
+              @heredoc = {
+                :propname => k,
+                :delimiter => v_heredoc,
+                :content => "",
+              }
               @state = :heredoc
             else
               raise "BUG"
@@ -127,20 +129,20 @@ module ScripTTY
           elsif @state == :screen
             handle_done_screen
           elsif @state == :heredoc
-            parse_fail("expected: #{@heredoc_delimiter.inspect}, got EOF")
+            parse_fail("expected: #{@heredoc[:delimiter].inspect}, got EOF")
           else
             raise "BUG: unhandled EOF on state #{@state}"
           end
         end
 
         def handle_heredoc_state
-          if @line =~ /^#{Regexp.escape(@heredoc_delimiter)}\s*$/n
+          if @line =~ /^#{Regexp.escape(@heredoc[:delimiter])}\s*$/n
             # End of here-document
-            @screen_properties[@heredoc_propname] = @heredoc_content
-            @heredoc_propname = @heredoc_content = @heredoc_delimiter = nil
+            set_screen_property(@heredoc[:propname], @heredoc[:content])
+            @heredoc = nil
             @state = :screen
           else
-            @heredoc_content << @line
+            @heredoc[:content] << @line
           end
         end
 
@@ -148,6 +150,10 @@ module ScripTTY
           @block.call({ :name => @screen_name, :properties => @screen_properties })
           @screen_name = @screen_properties = nil
           @state = :start
+        end
+
+        def set_screen_property(k,v)
+          @screen_properties[k] = v
         end
 
         def parse_string(str)
