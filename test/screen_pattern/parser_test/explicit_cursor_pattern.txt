@@ -1,0 +1,14 @@
+# Screen pattern with explicit cursor positioning
+[simple_pattern]
+rectangle: (3,4)-(6,8)  # rectangle is (row0, col0) - (row1, col1)
+cursor_pos: (1, 1)
+char_ignore: "."
+char_field: "#"
+text: <<END
++-----+
+|..###| ("field1")
+|#.#.#| ("apple", "orange", "banana")
+|##.##| ("foo",)
+|##.##| (,"bar")
++-----+
+END

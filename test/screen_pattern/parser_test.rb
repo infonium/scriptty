@@ -44,6 +44,29 @@ class ParserTest < Test::Unit::TestCase
     assert_equal expected, result
   end
 
+  def test_explicit_cursor_position
+    result = []
+    ScripTTY::ScreenPattern::Parser.parse(read_file("explicit_cursor_pattern.txt")) do |screen|
+      result << screen
+    end
+    expected = [{
+      :name => "simple_pattern",
+      :properties => {
+        "rectangle" => [3,4,6,8],
+        "cursor_pos" => [1, 1],
+        "char_ignore" => ".",
+        "char_field" => "#",
+        "text" => %Q!+-----+\n! +
+                  %Q!|..###| ("field1")\n! +
+                  %Q!|#.#.#| ("apple", "orange", "banana")\n! +
+                  %Q!|##.##| ("foo",)\n! +
+                  %Q!|##.##| (,"bar")\n! +
+                  %Q!+-----+\n!,
+      },
+    }]
+    assert_equal expected, result
+  end
+
   # Multiple patterns can be specified in a single file
   def test_multiple_patterns
     result = []
@@ -70,6 +93,22 @@ class ParserTest < Test::Unit::TestCase
         :name => "simple_pattern_2",
         :properties => {
           "rectangle" => [0,0,3,4],
+          "char_cursor" => "~",
+          "char_ignore" => ".",
+          "char_field" => "#",
+          "text" => %Q!+-----+\n! +
+                    %Q!|~:###| ("field1")\n! +
+                    %Q!|#.#.#| (,,)\n! +
+                    %Q!|Hello|\n! +
+                    %Q!|World|\n! +
+                    %Q!+-----+\n!,
+        },
+      },
+      {
+        :name => "simple_pattern_3",
+        :properties => {
+          "position" => [0,0],
+          "size" => [4,5],
           "char_cursor" => "~",
           "char_ignore" => ".",
           "char_field" => "#",

@@ -25,3 +25,18 @@ text: <<END
 |World|
 +-----+
 END
+
+[simple_pattern_3]
+position: (0,0)   # location of the top-left corner of the pattern within the window
+size: (4,5)       # (height, width) of the pattern
+char_cursor: "~"
+char_ignore: "."
+char_field: "#"
+text: <<END
++-----+
+|~:###| ("field1")
+|#.#.#| (,,)
+|Hello|
+|World|
++-----+
+END

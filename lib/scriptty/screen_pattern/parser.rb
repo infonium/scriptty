@@ -38,6 +38,7 @@ module ScripTTY
       OPTIONAL_COMMENT = /#{COMMENT}|\s*$/no
       IDENTIFIER = /[a-zA-Z0-9_]+/n
       RECTANGLE = /\(\s*\d+\s*,\s*\d+\s*\)\s*-\s*\(\s*\d+\s*,\s*\d+\s*\)/n
+      TUPLE = /\(\s*\d+(?:\s*,\s*\d+)*\s*\)/n
       STR_UNESCAPED = /[^"\\\t\r\n]/n
       STR_OCTAL = /\\[0-7]{3}/n
       STR_HEX = /\\x[0-9A-Fa-f]{2}/n
@@ -99,17 +100,21 @@ module ScripTTY
             handle_done_screen
             return handle_start_state
           end
-          if @line =~ /^(#{IDENTIFIER})\s*:\s*(?:(#{STRING})|(#{RECTANGLE})|(#{HEREDOCSTART}))#{OPTIONAL_COMMENT}$/no
-            k, v_str, v_rect, v_heredoc = [$1, parse_string($2), parse_rectangle($3), parse_heredocstart($4)]
+          if @line =~ /^(#{IDENTIFIER})\s*:\s*(?:(#{STRING})|(#{RECTANGLE})|(#{HEREDOCSTART}|(#{TUPLE})))#{OPTIONAL_COMMENT}$/no
+            k, v_str, v_rect, v_heredoc, v_tuple = [$1, parse_string($2), parse_rectangle($3), parse_heredocstart($4), parse_tuple($5)]
             if v_str
               @screen_properties[k] = v_str
             elsif v_rect
               @screen_properties[k] = v_rect
+            elsif v_tuple
+              @screen_properties[k] = v_tuple
             elsif v_heredoc
               @heredoc_propname = k
               @heredoc_delimiter = v_heredoc
               @heredoc_content = ""
               @state = :heredoc
+            else
+              raise "BUG"
             end
           else
             parse_fail("expected: key:value or [identifier]")
@@ -187,7 +192,12 @@ module ScripTTY
         # Parse (row1,col1)-(row2,col2) into [row1, col1, row2, col2]
         def parse_rectangle(str)
           return nil unless str
-          str.split(/[(,)\-\s]+/n, -1)[1,4].map{|n| n.to_i}
+          str.split(/[(,)\-\s]+/n, -1)[1..-2].map{|n| n.to_i}
+        end
+
+        # Parse (a, b, ...) into [a, b, ...]
+        def parse_tuple(str)
+          parse_rectangle(str)
         end
 
         def parse_heredocstart(str)
