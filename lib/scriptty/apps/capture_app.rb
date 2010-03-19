@@ -49,7 +49,8 @@ module ScripTTY
       end
 
       def main
-        @output_file = Util::Transcript::Writer.new(File.open(@options[:output], "w")) if @options[:output]
+        @output_file = Util::Transcript::Writer.new(File.open(@options[:output], @options[:append] ? "a" : "w")) if @options[:output]
+        @output_file.info("--- Capture started #{Time.now} ---") if @output_file
         @net.on_accept(@options[:console_addrs] || [], :multiple => true) do |conn|
           p = PasswordPrompt.new(conn, "Console password: ")
           p.authenticate { |password| password == @console_password }
@@ -179,6 +180,9 @@ module ScripTTY
             end
             opts.on("-o", "--output FILE", "Write transcript to FILE") do |optarg|
               options[:output] = optarg
+            end
+            opts.on("-a", "--[no-]append", "Append to output file instead of overwriting it") do |optarg|
+              options[:append] = optarg
             end
           end
           opts.parse!(args)
