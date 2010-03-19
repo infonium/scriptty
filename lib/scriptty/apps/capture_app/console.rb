@@ -35,20 +35,22 @@ module ScripTTY
           screen_lines = []
           screen_lines << "# #{@prompt_input}"  # prompt
           if @app.term
+            term_width = @app.term.width
             screen_lines << "Cursor position: #{@app.term.cursor_pos.inspect}"
-            screen_lines << "+" + "-"*@app.term.width + "+"
+            screen_lines << "+" + "-"*term_width + "+"
             @app.term.text.each do |line|
               screen_lines << "|#{line}|"
             end
-            screen_lines << "+" + "-"*@app.term.width + "+"
+            screen_lines << "+" + "-"*term_width + "+"
           else
+            term_width = 80
             screen_lines << "[ No terminal ]"
           end
           if @app.respond_to?(:log_messages)
             screen_lines << ""
             @app.log_messages.each do |line|
-              if line.length > @app.term.width
-                line = line[0,@app.term.width-1]
+              if line.length > term_width
+                line = line[0,term_width-1]
                 line += ">"
               end
               screen_lines << ":#{line}"
