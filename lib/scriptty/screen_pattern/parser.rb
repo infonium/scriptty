@@ -285,7 +285,7 @@ module ScripTTY
           field_ranges_by_row = consolidate_positions(field_positions)
 
           # Set the cursor position
-          set_screen_property('cursor_pos', abs_pos(cursor_pos), start_lineno + cursor_pos[0]) if cursor_pos
+          set_screen_property('cursor_pos', cursor_pos, start_lineno + cursor_pos[0]) if cursor_pos
 
           # Add fields to the screen.  Complain if there's a mismatch between
           # the number of fields found and the number identified.
@@ -390,6 +390,7 @@ module ScripTTY
               add_field_to_screen(field_name, abs_pos(rel_range), lineno+i)
             end
           else
+            v = abs_pos(v) if k == "cursor_pos"
             # Don't allow setting a screen property more than once to different values.
             old_value = @screen_properties[k]
             unless old_value.nil? or old_value == v
