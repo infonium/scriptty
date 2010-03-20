@@ -192,6 +192,7 @@ module ScripTTY
           height = text.length-2
           parse_fail("#{k} must be surrounded by identical +-----+ lines", lineno + text.length) unless text[-1] == text[0]    # TODO - test if this is the correct offset
           text = text[1..-2]    # strip top and bottom +------+ lines
+          lineno += 1   # Increment line number to compensate
 
           # If there is an explicitly-specified size of the screen, compare against it.
           # If there is no explicitly-specified size of the screen, use the implicit size.
