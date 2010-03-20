@@ -358,8 +358,8 @@ module ScripTTY
           lineno ||= property_lineno
           row, col_range = row_and_col_range
           @screen_properties['fields'] ||= {}
-          if @screen_properties['fields'].include?(name)
-            parse_fail("duplicate field name #{name.inspect}", lineno)
+          if @screen_properties['fields'].include?(name) and @screen_properties['fields'][name] != [row, col_range]
+            parse_fail("field #{format_field(name, row, col_range)} conflicts with previous definition #{format_field(name, *@screen_properties['fields'][name])}", lineno)
           end
           @screen_properties['fields'][name] = [row, col_range]
           nil
@@ -513,6 +513,11 @@ module ScripTTY
             parse_fail("element #{i+1} of tuple is #{v.class.name}, but a string or null is required", line) unless v.nil? or v.is_a?(String)
           end
           t
+        end
+
+        # Return the display form of a field
+        def format_field(name, row, col_range)
+          "(#{name.inspect}, (#{row}, #{col_range.first}), #{col_range.count})"
         end
 
         def parse_fail(message=nil, line=nil)
