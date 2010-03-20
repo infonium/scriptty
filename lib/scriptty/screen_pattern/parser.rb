@@ -495,7 +495,7 @@ module ScripTTY
               elsif (m = s.scan TWO_INTEGER_TUPLE)
                 retval << parse_rectangle(m)    # parse_rectangle is dumb, so it will work here
               else
-                parse_fail("column #{column+s.pos}: expected STRING, got #{s.rest.chars.to_a[0].inspect}", line)
+                parse_fail("column #{column+s.pos}: expected STRING, INTEGER, TWO_INTEGER_TUPLE, or NIL, got #{s.rest.chars.to_a[0].inspect}", line)
               end
               expect_comma = true
             end
