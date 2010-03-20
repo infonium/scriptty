@@ -33,7 +33,9 @@ module ScripTTY
         #   matching text or cursor there.  :force_fields takes precedence over :force_cursor.
         # [:force_cursor]
         #   If true, the cursor will be positioned in-line, even if there is
-        #   matching text or fields there.  :force_fields takes precedence over :force_cursor.
+        #   matching text or fields there.  :force_cursor may also be a
+        #   Regexp, in which case the regexp must match in order for the field
+        #   to be replaced.  :force_fields takes precedence over :force_cursor.
         def generate(name, properties_and_options={})
           new(name, properties_and_options).generate
         end
@@ -140,7 +142,11 @@ module ScripTTY
           # Fill in the cursor, possibly overwriting matches (but never fields)
           if @cursor_pos
             row, col = @cursor_pos
-            grid[row][col] = :cursor if !grid[row][col] or (@force_cursor and grid[row][col] != :field)
+            if !grid[row][col]
+              grid[row][col] = :cursor
+            elsif @force_cursor and grid[row][col] != :field and (!@force_cursor.is_a?(Regexp) or @force_cursor =~ grid[row][col])
+              grid[row][col] = :cursor
+            end
           end
 
           # Walk the grid, checking for nil, :field, and :cursor.  We won't

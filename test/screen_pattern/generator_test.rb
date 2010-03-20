@@ -258,6 +258,60 @@ EOT
     assert_equal expected, actual
   end
 
+  def test_force_cursor_regexp_match
+    actual = ScripTTY::ScreenPattern::Generator.generate("foo", :force_cursor => /H/,
+      :size => [3,5],
+      :cursor_pos => [0,0],
+      :matches => [
+        [[0,0], "Hello"],
+      ],
+      :fields => {
+        "one" => [1, 2..4],
+      })
+    expected = <<EOT
+[foo]
+size: (3, 5)
+char_cursor: "@"
+char_ignore: "."
+char_field: "#"
+text: <<END
++-----+
+|@ello|
+|..###| ("one")
+|.....|
++-----+
+END
+EOT
+    assert_equal expected, actual
+  end
+
+  def test_force_cursor_regexp_nomatch
+    actual = ScripTTY::ScreenPattern::Generator.generate("foo", :force_cursor => /x/,
+      :size => [3,5],
+      :cursor_pos => [0,0],
+      :matches => [
+        [[0,0], "Hello"],
+      ],
+      :fields => {
+        "one" => [1, 2..4],
+      })
+    expected = <<EOT
+[foo]
+size: (3, 5)
+cursor_pos: (0, 0)
+char_ignore: "."
+char_field: "#"
+text: <<END
++-----+
+|Hello|
+|..###| ("one")
+|.....|
++-----+
+END
+EOT
+    assert_equal expected, actual
+  end
+
   def test_second_choice_chars
     actual = ScripTTY::ScreenPattern::Generator.generate("foo",
       :size => [3,5],
