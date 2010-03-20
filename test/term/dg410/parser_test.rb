@@ -20,6 +20,11 @@ require File.dirname(__FILE__) + "/../../test_helper.rb"
 require 'scriptty/term'
 
 class ParserTest < Test::Unit::TestCase
+  def setup
+    # Tests should pass with $KCODE = "UTF8"
+    $KCODE = "UTF8"
+  end
+
   def test_basic
     expected_result = [
       [:t_blink_enable, "\003"],

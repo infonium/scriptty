@@ -106,7 +106,7 @@ module ScripTTY # :nodoc:
       # negotiation).
       def feed_bytes(bytes)
         retvals = []
-        bytes.split("").each do |byte|
+        bytes.split(//n).each do |byte|
           retvals << feed_byte(byte)
         end
         retvals.join
@@ -420,14 +420,14 @@ module ScripTTY # :nodoc:
 
         # ESC [
         def t_parse_csi(fsm)
-          fsm.redirect = lambda {|fsm| fsm.input =~ /[\d;]/}
+          fsm.redirect = lambda {|fsm| fsm.input =~ /[\d;]/n}
         end
 
         # Operating system controls
         # ESC ] Ps ; Pt BEL
         # "ESC ]", followed by a number and a semicolon, followed by printable text, followed by a non-printable character
         def t_parse_osc(fsm)
-          fsm.redirect = lambda {|fsm| fsm.input =~ /[\x20-\x7e]/}
+          fsm.redirect = lambda {|fsm| fsm.input =~ /[\x20-\x7e]/n}
         end
 
         # IAC SB ... SE
@@ -645,10 +645,10 @@ module ScripTTY # :nodoc:
         #   parse_csi_params("\e[?1;2J")  # returns [1,2]
         def parse_csi_params(input_seq) # TODO - test this
           seq = input_seq.join if input_seq.respond_to?(:join)  # Convert array to string
-          unless seq =~ /\A\e\[\??([\d;]*)[^\d]\Z/
+          unless seq =~ /\A\e\[\??([\d;]*)[^\d]\Z/n
             raise "BUG"
           end
-          $1.split(";").map{|p|
+          $1.split(/;/n).map{|p|
             if p.empty?
               nil
             else

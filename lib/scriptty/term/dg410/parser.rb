@@ -89,7 +89,7 @@ module ScripTTY # :nodoc:
         # negotiation).
         def feed_bytes(bytes)
           retvals = []
-          bytes.split("").each do |byte|
+          bytes.split(//n).each do |byte|
             retvals << feed_byte(byte)
           end
           retvals.join
@@ -136,10 +136,10 @@ module ScripTTY # :nodoc:
           #   parse_csi_params("\e[?1;2J")  # returns [1,2]
           def parse_csi_params(input_seq) # TODO - test this
             seq = input_seq.join if input_seq.respond_to?(:join)  # Convert array to string
-            unless seq =~ /\A\e\[\??([\d;]*)[^\d]\Z/
+            unless seq =~ /\A\e\[\??([\d;]*)[^\d]\Z/n
               raise "BUG"
             end
-            $1.split(";").map{|p|
+            $1.split(/;/n).map{|p|
               if p.empty?
                 nil
               else
