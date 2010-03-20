@@ -368,6 +368,31 @@ EOT
     assert_equal expected, actual
   end
 
+  def test_ignore
+    actual = ScripTTY::ScreenPattern::Generator.generate("foo",
+      :ignore => [[0, 1..1]],
+      :size => [3,5],
+      :matches => [
+        [[0,0], "Hello"],
+      ],
+      :fields => {
+        "one" => [1, 2..4],
+      })
+    expected = <<EOT
+[foo]
+size: (3, 5)
+char_ignore: "."
+char_field: "#"
+text: <<END
++-----+
+|H.llo|
+|..###| ("one")
+|.....|
++-----+
+END
+EOT
+    assert_equal expected, actual
+  end
 
   def test_parsed_patterns_raise_no_errors
     require 'scriptty/screen_pattern/parser'

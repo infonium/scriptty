@@ -36,6 +36,8 @@ module ScripTTY
         #   matching text or fields there.  :force_cursor may also be a
         #   Regexp, in which case the regexp must match in order for the field
         #   to be replaced.  :force_fields takes precedence over :force_cursor.
+        # [:ignore]
+        #   If specified, this is an array of [row, col0..col1] ranges.
         def generate(name, properties_and_options={})
           new(name, properties_and_options).generate
         end
@@ -48,9 +50,9 @@ module ScripTTY
 
       def initialize(name, properties={})
         properties = properties.dup
-        @used_chars = Set.new
         @force_cursor = properties.delete(:force_cursor)
         @force_fields = properties.delete(:force_fields)
+        @ignore = properties.delete(:ignore)
         load_spec(name, properties)
         make_grid
       end
@@ -85,11 +87,6 @@ module ScripTTY
       private
 
         def make_grid
-          # Mark any pre-defined placeholder characters as used
-          @used_chars << @char_ignore if @char_ignore
-          @used_chars << @char_field if @char_field
-          @used_chars << @char_cursor if @char_cursor
-
           # Initialize grid as 2D array of nils
           height, width = @size
           grid = (1..height).map { [nil] * width }
@@ -101,8 +98,17 @@ module ScripTTY
               string.chars.to_a.each do |char|
                 raise ArgumentError.new("overlapping match: #{[pos, string].inspect}") if grid[row][col]
                 grid[row][col] = char
-                @used_chars << char
                 col += 1
+              end
+            end
+          end
+
+          # Fill in ignore overrides
+          if @ignore
+            @ignore.each do |row, col_range|
+              row, col_range = rel_pos([row, col_range])
+              col_range.each do |col|
+                grid[row][col] = nil
               end
             end
           end
@@ -166,6 +172,19 @@ module ScripTTY
           @char_ignore = nil unless has_ignore
           @char_field = nil unless has_field
           @char_cursor = nil unless has_cursor
+
+          # Determine which characters were already used
+          @used_chars = Set.new
+          @used_chars << @char_ignore if @char_ignore
+          @used_chars << @char_field if @char_field
+          @used_chars << @char_cursor if @char_cursor
+          height.times do |row|
+            width.times do |col|
+              if grid[row][col] and grid[row][col].is_a?(String)
+                @used_chars << grid[row][col]
+              end
+            end
+          end
 
           # Choose a character to represent ignored positions
           if has_ignore and !@char_ignore
