@@ -1,0 +1,4 @@
+#!/usr/bin/env jruby
+
+require 'scriptty/apps/dump_screens_app'
+ScripTTY::Apps::DumpScreensApp.new(ARGV).main
