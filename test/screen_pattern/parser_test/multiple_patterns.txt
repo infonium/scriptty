@@ -7,8 +7,8 @@ text: <<END
 +-----+
 |@.###| ("field1")
 |#.#.#| ("apple", "orange", "banana")
-|##.##| ("foo",)
-|##.##| (,"bar")
+|##.##| ("foo",nil)
+|##.##| (nil,"bar")
 +-----+
 END
 
@@ -20,7 +20,7 @@ char_field: "#"
 text: <<END
 +-----+
 |~:###| ("field1")
-|#.#.#| (,,)
+|#.#.#| (nil,nil,nil)
 |Hello|
 |World|
 +-----+
@@ -35,7 +35,7 @@ char_field: "#"
 text: <<END
 +-----+
 |~:###| ("field1")
-|#.#.#| (,,)
+|#.#.#| (nil,nil,nil)
 |Hello|
 |World|
 +-----+

@@ -8,7 +8,7 @@ text: <<END
 +-----+
 |█.ØØØ| ("field1")
 |Ø.Ø.Ø| ("apple", "orange", "banana")
-|ØØ.ØØ| ("foo",)
-|ØØ.ØØ| (,"bar")
+|ØØ.ØØ| ("foo",nil)
+|ØØ.ØØ| (nil,"bar")
 +-----+
 END

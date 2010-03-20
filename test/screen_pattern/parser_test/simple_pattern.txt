@@ -3,13 +3,12 @@
 rectangle: (3,4)-(6,8)  # rectangle is (row0, col0) - (row1, col1)
 char_cursor: "@"
 char_ignore: "."
+char_field: "#"
 text: <<END
 +-----+
 |@.###| ("field1")
 |#.#.#| ("apple", "orange", "banana")
-|##.##| ("foo",)
-|##.##| (,"bar")
+|##.##| ("foo",nil)
+|##X##| (nil,"bar")
 +-----+
 END
-# Fields may occur after the body
-char_field: "#"
