@@ -5,7 +5,7 @@ full-screen terminal-based applications.
 
 = Terminals supported
 
-None yet, but DG410 and limited xterm support is planned.
+Limited DG410 and XTerm support.
 
 = Requirements
 
