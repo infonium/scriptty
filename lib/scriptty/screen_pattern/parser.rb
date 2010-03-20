@@ -212,7 +212,9 @@ module ScripTTY
             :char_field => @screen_properties['char_field'],
             :char_ignore => @screen_properties['char_ignore'])
 
-          @screen_properties['matches'] = match_list    # XXX TODO - This will probably need to change
+          if match_list and !match_list.empty?
+            @screen_properties['matches'] = match_list    # XXX TODO - This will probably need to change
+          end
         end
 
         # If no position has been specified for this pattern, default to the top-left corner of the window.
