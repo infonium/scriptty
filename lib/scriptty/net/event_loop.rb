@@ -47,6 +47,7 @@ module ScripTTY
         @exit_mutex = Mutex.new   # protects
         @exit_requested = false
         @timer_queue = []    # sorted list of timers, in ascending order of expire_at time
+        @done = false
       end
 
       # Instruct the main loop to exit.  Returns immediately.
@@ -57,6 +58,11 @@ module ScripTTY
         @exit_mutex.synchronize { @exit_requested = true }
         @selector.wakeup
         nil
+      end
+
+      # Return true if the event loop is done executing.
+      def done?
+        @done
       end
 
       # Listen for TCP connections on the specified address (given as [host, port])
@@ -168,6 +174,8 @@ module ScripTTY
       end
 
       def main
+        raise ArgumentError.new("use the resume method when suspended") if @suspended
+        raise ArgumentError.new("Already done") if @done
         loop do
           # Exit if the "exit" method has been invoked.
           break if @exit_mutex.synchronize{ @exit_requested }
@@ -208,10 +216,38 @@ module ScripTTY
             handle_selection_key(k)
             @selector.selectedKeys.remove(k)
           end
+
+          # Break out of the loop if the suspend method has been invoked.   # TODO - test me
+          return :suspended if @suspended
         end
+        nil
       ensure
-        @selector.keys.to_a.each { |k| k.channel.close }    # Close any sockets opened by this EventLoop
-        @selector.close
+        unless @suspended or @done
+          @selector.keys.to_a.each { |k| k.channel.close }    # Close any sockets opened by this EventLoop
+          @selector.close
+          @done = true
+        end
+      end
+
+      # Temporarily break out of the event loop.
+      #
+      # NOTE: Always use the resume method after using this method, since
+      # otherwise network connections will hang.  This method is *NOT*
+      # thread-safe.
+      #
+      # To exit the event loop permanently, use the exit method.
+      def suspend
+        @suspended = true
+        @selector.wakeup
+      end
+
+      # Resume a
+      #
+      # Always use the resume method after using this method.
+      def resume
+        raise ArgumentError.new("not suspended") unless @suspended
+        @suspended = false
+        main
       end
 
       private
