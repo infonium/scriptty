@@ -16,6 +16,7 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with ScripTTY.  If not, see <http://www.gnu.org/licenses/>.
 
+require 'scriptty/exception'
 require 'scriptty/net/event_loop'
 require 'scriptty/term'
 require 'scriptty/screen_pattern'
@@ -25,10 +26,11 @@ module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep ]
+    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout ]
 
     attr_reader :term   # The terminal emulation object
 
+    # Initialize the Expect object.
     def initialize
       @net = ScripTTY::Net::EventLoop.new
       @suspended = false
@@ -39,6 +41,19 @@ module ScripTTY
       @wait_finished = false
       @evaluator = Evaluator.new(self)
       @match_buffer = ""
+      @timeout = nil
+      @timeout_timer = nil
+    end
+
+    def set_timeout(seconds)
+      raise ArgumentError.new("argument to set_timeout must be Numeric or nil") unless seconds.is_a?(Numeric) or seconds.nil?
+      if seconds
+        @timeout = seconds.to_f
+      else
+        @timeout = nil
+      end
+      refresh_timeout
+      nil
     end
 
     # Load and evaluate a script from a file.
@@ -59,8 +74,11 @@ module ScripTTY
       name ||= @term_name
       @term_name = name
       raise ArgumentError.new("No previous terminal specified") unless name
-      @term = ScripTTY::Term.new(name)
-      @term.on_unknown_sequence :ignore     # XXX - Is this what we want?
+      without_timeout {
+        @term = ScripTTY::Term.new(name)
+        @term.on_unknown_sequence :ignore     # XXX - Is this what we want?
+      }
+      nil
     end
 
     # Connect to the specified address.  Return true if the connection was
@@ -76,6 +94,7 @@ module ScripTTY
       end
       dispatch until connected or connect_error or @net.done?
       raise connect_error if !connected or connect_error or @net.done?  # XXX - this is sloppy
+      refresh_timeout
       connected
     end
 
@@ -111,6 +130,7 @@ module ScripTTY
       sleep_done = false
       @net.timer(seconds) { sleep_done = true ; @net.suspend }
       dispatch until sleep_done
+      refresh_timeout
       nil
     end
 
@@ -159,6 +179,7 @@ module ScripTTY
     # Clears the character-match buffer on return.
     def wait
       dispatch until @wait_finished
+      refresh_timeout
       @wait_finished = false
       @match_buffer = ""
       nil
@@ -181,6 +202,39 @@ module ScripTTY
     end
 
     private
+
+      # Kick the watchdog timer
+      def refresh_timeout
+        disable_timeout
+        enable_timeout
+      end
+
+      def without_timeout
+        raise ArgumentError.new("no block given") unless block_given?
+        disable_timeout
+        begin
+          yield
+        ensure
+          enable_timeout
+        end
+      end
+
+      # Disable timeout handling
+      def disable_timeout
+        if @timeout_timer
+          @timeout_timer.cancel
+          @timeout_timer = nil
+        end
+        nil
+      end
+
+      # Enable timeout handling (if @timeout is set)
+      def enable_timeout
+        if @timeout
+          @timeout_timer = @net.timer(@timeout, :daemon=>true) { raise ScripTTY::Exception::Timeout.new("Operation timed out") }
+        end
+        nil
+      end
 
       # Re-enter the dispatch loop
       def dispatch
