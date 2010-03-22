@@ -1,4 +1,4 @@
-# = Low-level (syntax-only) parser for screen pattern files
+# = Parser for screen pattern files
 # Copyright (C) 2010  Infonium Inc.
 #
 # This file is part of ScripTTY.
@@ -19,9 +19,10 @@
 require 'multibyte'
 require 'iconv'
 require 'strscan'
+require 'scriptty/screen_pattern'
 
 module ScripTTY
-  module ScreenPattern
+  class ScreenPattern    # reopen
     # Parser for screen pattern files
     #
     # Parses a file containing screen patterns, yielding hashes.

@@ -18,11 +18,11 @@
 
 require 'multibyte'
 require 'set'
-
+require 'scriptty/screen_pattern'
 require 'scriptty/screen_pattern/parser'
 
 module ScripTTY
-  module ScreenPattern
+  class ScreenPattern    # reopen
     class Generator
       class <<self
         # Generate a screen pattern from a specification
