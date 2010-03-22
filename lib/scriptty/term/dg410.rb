@@ -475,7 +475,7 @@ module ScripTTY # :nodoc:
         # Proprietary escape code
         # <036> ~ <2-byte-command> <n> <n*bytes>
         def t_proprietary_escape(fsm)
-          command = fsm.input_sequence[3,2].join
+          command = fsm.input_sequence[2,2].join
           payload = fsm.input_sequence[5..-1].join
           @proprietary_escape_callback.call(command, payload) if @proprietary_escape_callback
         end
