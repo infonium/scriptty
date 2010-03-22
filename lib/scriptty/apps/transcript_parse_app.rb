@@ -36,29 +36,52 @@ module ScripTTY
               reader = ScripTTY::Util::Transcript::Reader.new
               @last_printable = nil
               parser_class = ScripTTY::Term.class_by_name(@options[:term]).parser_class
-              @parser = parser_class.new :callback => Proc.new { |event_name, fsm|
+
+              # Set up server-side FSM
+              @server_parser = parser_class.new :callback => Proc.new { |event_name, fsm|
                 if event_name == :t_printable
                   # Merge printable character sequences together, rather than writing individual "t_printable" events.
-                  @last_printable ||= ""
-                  @last_printable += fsm.input_sequence.join
+                  @last_server_printable ||= ""
+                  @last_server_printable += fsm.input_sequence.join
                 else
-                  flush_printable
+                  flush_server_printable
                   @writer.server_parsed(event_name, fsm.input_sequence.join)
                 end
               }
-              @parser.on_unknown_sequence { |seq| @writer.server_parsed("?", seq) }
+              @server_parser.on_unknown_sequence { |seq| @writer.server_parsed("?", seq) }
+
+              # Set up client-side FSM
+              if @options[:client]
+                @client_parser = parser_class.new :client => true, :callback => Proc.new { |event_name, fsm|
+                  if event_name == :t_printable
+                    # Merge printable character sequences together, rather than writing individual "t_printable" events.
+                    @last_client_printable ||= ""
+                    @last_client_printable += fsm.input_sequence.join
+                  else
+                    flush_client_printable
+                    @writer.client_parsed(event_name, fsm.input_sequence.join)
+                  end
+                }
+                @client_parser.on_unknown_sequence { |seq| @writer.client_parsed("?", seq) }
+              end
+
               until input_file.eof?
                 timestamp, type, args = reader.parse_line(input_file.readline)
                 @writer.override_timestamp = timestamp
                 if type == :from_server
                   @writer.send(type, *args) if @options[:keep]
                   bytes = args[0]
-                  @parser.feed_bytes(bytes)
+                  @server_parser.feed_bytes(bytes)
+                elsif type == :from_client and @client_parser
+                  @writer.send(type, *args) if @options[:keep]
+                  bytes = args[0]
+                  @client_parser.feed_bytes(bytes)
                 else
                   @writer.send(type, *args)
                 end
               end
-              flush_printable
+              flush_server_printable
+              flush_client_printable if @client_parser
             end
           end
           @writer.close
@@ -67,10 +90,17 @@ module ScripTTY
 
       private
 
-        def flush_printable
-          if @last_printable
-            @writer.server_parsed(".", @last_printable)
-            @last_printable = nil
+        def flush_server_printable
+          if @last_server_printable
+            @writer.server_parsed(".", @last_server_printable)
+            @last_server_printable = nil
+          end
+        end
+
+        def flush_client_printable
+          if @last_client_printable
+            @writer.client_parsed(".", @last_client_printable)
+            @last_client_printable = nil
           end
         end
 
@@ -88,6 +118,9 @@ module ScripTTY
             end
             opts.on("-k", "--keep", 'Keep original "S" lines in the transcript') do |optarg|
               options[:keep] = optarg
+            end
+            opts.on("-c", "--[no-]client", "Also parse client (\"C\") entries") do |optarg|
+              options[:client] = optarg
             end
             opts.on("-o", "--output FILE", "Write output to FILE") do |optarg|
               options[:output] = optarg

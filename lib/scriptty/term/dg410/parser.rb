@@ -22,13 +22,15 @@ module ScripTTY # :nodoc:
   module Term
     class DG410 # reopen
       class Parser
-        PARSER_DEFINITION = File.read(File.join(File.dirname(__FILE__), "dg410-escapes.txt"))
+        SERVER_PARSER_DEFINITION = File.read(File.join(File.dirname(__FILE__), "dg410-escapes.txt"))
+        CLIENT_PARSER_DEFINITION = File.read(File.join(File.dirname(__FILE__), "dg410-client-escapes.txt"))
 
         # ScripTTY::Util::FSM object used by this parser.  (Used for debugging.)
         attr_reader :fsm
 
         def initialize(options={})
-          @fsm = Util::FSM.new(:definition => PARSER_DEFINITION,
+          @fsm = Util::FSM.new(
+            :definition => options[:client] ? CLIENT_PARSER_DEFINITION : SERVER_PARSER_DEFINITION,
             :callback => self, :callback_method => :handle_event)
           @callback = options[:callback]
           @callback_method = options[:callback_method] || :call
