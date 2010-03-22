@@ -26,6 +26,26 @@ module ScripTTY
           retval << new(spec[:name], spec[:properties])
         end
       end
+
+      def from_term(term, name=nil)
+        from_text(term.text, :name => name, :cursor_pos => term.cursor_pos)
+      end
+
+      def from_text(text, opts={})
+        text = text.split(/\r?\n/n) if text.is_a?(String)
+        name ||= opts[:name] || "untitled"
+
+        width = text.map{|line| line.chars.to_a.length}.max
+        height = text.length
+        properties = {}
+        properties['cursor_pos'] = opts[:cursor_pos]
+        properties['size'] = [height, width]
+        properties['matches'] = []
+        text.each_with_index{|line, i|
+          properties['matches'] << [[i, 0], line]
+        }
+        new(name, properties)
+      end
       protected :new    # Users should not instantiate this object directly
     end
 
@@ -37,8 +57,8 @@ module ScripTTY
 
     def initialize(name, properties)    # :nodoc:
       @name = name
-      #@position = properties["position"]
-      #@size = properties["size"]
+      @position = properties["position"]
+      @size = properties["size"]
       @cursor_pos = properties["cursor_pos"]
       @field_ranges = properties["fields"]    # Hash of "field_name" => [row, col1..col2] ranges
       @matches = properties["matches"]  # Array of [[row,col], string] records to match
@@ -71,6 +91,9 @@ module ScripTTY
       fields
     end
 
+    def generate(name=nil)
+      Generator.generate(name || "untitled", :cursor_pos => @cursor_pos, :matches => @matches, :fields => @field_ranges, :position => @position, :size => @size)
+    end
   end
 end
 

@@ -277,8 +277,12 @@ module ScripTTY
 
         def load_spec(name, properties)
           properties = properties.dup
-          properties.keys.each do |k|   # Replace symbol keys with strings
-            properties[k.to_s] = properties.delete(k)
+          properties.keys.each do |k|   # Replace symbol keys with strings, and remove false/nil properties.
+            if properties[k]
+              properties[k.to_s] = properties.delete(k)
+            else
+              properties.delete(k)
+            end
           end
 
           # Check name
