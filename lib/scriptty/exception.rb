@@ -25,5 +25,14 @@ module ScripTTY
     # Raised when a script times out.
     class Timeout < Base
     end
+
+    # Raised when a connection error occurs
+    class ConnectError < Base
+      attr_accessor :orig_exception
+      def initialize(exception)
+        @orig_exception = exception
+        super("Connect error (#{exception.class.name}): #{exception}")
+      end
+    end
   end
 end

@@ -96,12 +96,15 @@ module ScripTTY
       connect_error = nil
       @conn = @net.connect(remote_address) do |c|
         c.on_connect { connected = true; handle_connect; @net.suspend }
-        c.on_connect_error { |e| handle_connect_error(e) }
+        c.on_connect_error { |e| connect_error = e; @net.suspend }
         c.on_receive_bytes { |bytes| handle_receive_bytes(bytes) }
         c.on_close { @conn = nil; handle_connection_close }
       end
       dispatch until connected or connect_error or @net.done?
-      raise connect_error if !connected or connect_error or @net.done?  # XXX - this is sloppy
+      if connect_error
+        transcribe_connect_error(connect_error)
+        raise ScripTTY::Exception::ConnectError.new(connect_error)
+      end
       refresh_timeout
       connected
     end
@@ -271,6 +274,16 @@ module ScripTTY
       def handle_connect
         @transcript_writer.server_open(*@conn.remote_address) if @transcript_writer
         init_term
+      end
+
+      def transcribe_connect_error(e)
+        if @transcript_writer
+          @transcript_writer.info("Connect error", e.class.name, e.to_s, e.backtrace.join("\n"))
+          # Write the backtrace out as separate records, for the convenience of people reading the logs without a parser.
+          e.backtrace.each do |line|
+            @transcript_writer.info("Connect error backtrace", line)
+          end
+        end
       end
 
       def handle_receive_bytes(bytes)
