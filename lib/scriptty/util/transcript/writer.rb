@@ -97,7 +97,7 @@ module ScripTTY
           end
 
           def encode_string(bytes)
-            escaped = bytes.gsub(/\\|"|[^\x20-\x7e]*/m) { |m|
+            escaped = bytes.gsub(/\\|"|[^\x20-\x7e]*/mn) { |m|
               m.unpack("C*").map{ |c|
                 sprintf("\\%03o", c)
               }.join
