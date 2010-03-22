@@ -1,3 +1,24 @@
+begin
+  require 'jeweler'
+  Jeweler::Tasks.new do |gemspec|
+    gemspec.name = "scriptty"
+    gemspec.summary = "write expect-like script to control full-screen terminal-based applications"
+    gemspec.description = <<EOF
+ScripTTY is a JRuby application and library that lets you control full-screen
+terminal applications using an expect-like scripting language and a full-screen
+matching engine.
+EOF
+    gemspec.platform = "java"
+    gemspec.email = "dlitz@infonium.ca"
+    gemspec.homepage = "http://github.com/infonium/scriptty"
+    gemspec.authors = ["Dwayne Litzenberger"]
+    gemspec.add_dependency "treetop"
+    gemspec.add_dependency "multibyte"
+  end
+rescue LoadError
+  puts "Jeweler not available. Install it with: gem install jeweler"
+end
+
 require 'rake/rdoctask'
 Rake::RDocTask.new do |t|
   t.rdoc_files = Dir.glob(%w( README* COPYING* lib/**/*.rb *.rdoc )).uniq
