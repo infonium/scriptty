@@ -123,6 +123,13 @@ module ScripTTY # :nodoc:
             }
           end
 
+          # IAC SB ... SE
+          def t_parse_telnet_sb(fsm)
+            # limit subnegotiation to 100 chars   # FIXME - This is wrong
+            count = 0
+            fsm.redirect = lambda {|fsm| count += 1; count < 100 && fsm.input_sequence[-2..-1] != ["\377", "\360"]}
+          end
+
           # Parse ANSI/DEC CSI escape sequence parameters.  Pass in fsm.input_sequence
           #
           # Example:

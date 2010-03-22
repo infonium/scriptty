@@ -453,6 +453,12 @@ module ScripTTY # :nodoc:
         def t_dim_off(fsm) end # TODO
         def t_set_cursor_type(fsm) end # TODO
 
+        def t_telnet_will(fsm) end  # TODO
+        def t_telnet_wont(fsm) end  # TODO
+        def t_telnet_do(fsm) end  # TODO
+        def t_telnet_dont(fsm) end  # TODO
+        def t_telnet_subnegotiation(fsm) end  # TODO
+
         # Proprietary escape code
         # <036> ~ <2-byte-command> <n> <n*bytes>
         def t_proprietary_escape(fsm)
