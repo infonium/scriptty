@@ -48,11 +48,24 @@ module ScripTTY # :nodoc:
         @height = height
         @width = width
 
+        @proprietary_escape_callback = nil
+
         reset_to_initial_state!
       end
 
       def on_unknown_sequence(mode=nil, &block)
         @parser.on_unknown_sequence(mode, &block)
+      end
+
+      def on_proprietary_escape(mode=nil, &block)
+        if mode == :ignore and !block
+          @proprietary_escape_callback = nil
+        elsif !mode and block
+          @proprietary_escape_callback = block
+        else
+          raise ArgumentError.new("mode and block are mutually exclusive")
+        end
+        nil
       end
 
       def feed_bytes(bytes)
@@ -464,7 +477,7 @@ module ScripTTY # :nodoc:
         def t_proprietary_escape(fsm)
           command = fsm.input_sequence[3,2].join
           payload = fsm.input_sequence[5..-1].join
-          #puts "PROPRIETARY ESCAPE: command=#{command.inspect} payload=#{payload.inspect}" # DEBUG FIXME
+          @proprietary_escape_callback.call(command, payload) if @proprietary_escape_callback
         end
 
         # Acknowledgement of proprietary escape sequence.
