@@ -196,10 +196,10 @@ module ScripTTY
     # Clears the character-match buffer on return.
     def wait
       @transcript_writer.info("Script executing command", "wait") if @transcript_writer
+      check_expect_match unless @wait_finished
       dispatch until @wait_finished
       refresh_timeout
       @wait_finished = false
-      @match_buffer = ""
       nil
     end
 
@@ -307,6 +307,7 @@ module ScripTTY
               @match_buffer = @match_buffer[m.end(0)..-1] if m    # truncate match buffer
             when ScreenPattern
               m = ph.pattern.match_term(@term)
+              @match_buffer = "" if m   # truncate match buffer if a screen matches
             else
               raise "BUG: pattern is #{ph.pattern.inspect}"
             end
