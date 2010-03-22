@@ -26,6 +26,7 @@ class CaptureAppTest < Test::Unit::TestCase
   def setup
     require 'scriptty/apps/capture_app'
     require 'scriptty/net/event_loop'
+    raise "CaptureAppTest disabled" # FIXME
   end
 
   def test_basic

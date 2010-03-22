@@ -37,6 +37,10 @@ class EventLoopTest < Test::Unit::TestCase
 
     CONNECTION_REFUSE_ADDR = ['localhost', 2]   # address on which connections will be refused
 
+    def setup
+      raise "EventLoopTest disabled" # FIXME
+    end
+
     def test_callback_error_handling_on_connect_error
       result = []
       evloop = ScripTTY::Net::EventLoop.new
