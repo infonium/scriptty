@@ -20,6 +20,7 @@ require 'scriptty/exception'
 require 'scriptty/net/event_loop'
 require 'scriptty/term'
 require 'scriptty/screen_pattern'
+require 'scriptty/util/transcript/writer'
 require 'set'
 
 module ScripTTY
@@ -30,8 +31,10 @@ module ScripTTY
 
     attr_reader :term   # The terminal emulation object
 
+    attr_accessor :transcript_writer # Set this to an instance of ScripTTY::Util::Transcript::Writer
+
     # Initialize the Expect object.
-    def initialize
+    def initialize(options={})
       @net = ScripTTY::Net::EventLoop.new
       @suspended = false
       @effective_patterns = nil
@@ -43,6 +46,7 @@ module ScripTTY
       @match_buffer = ""
       @timeout = nil
       @timeout_timer = nil
+      @transcript_writer = options[:transcript_writer]
     end
 
     def set_timeout(seconds)
@@ -71,12 +75,15 @@ module ScripTTY
     # If a name is specified, use that terminal type.  Otherwise, use the
     # previous terminal type.
     def init_term(name=nil)
+      @transcript_writer.info("Script executing command", "init_term", name || "") if @transcript_writer
       name ||= @term_name
       @term_name = name
       raise ArgumentError.new("No previous terminal specified") unless name
       without_timeout {
         @term = ScripTTY::Term.new(name)
-        @term.on_unknown_sequence :ignore     # XXX - Is this what we want?
+        @term.on_unknown_sequence do |seq|
+          @transcript_writer.info("Unknown escape sequence", seq) if @transcript_writer
+        end
       }
       nil
     end
@@ -84,6 +91,7 @@ module ScripTTY
     # Connect to the specified address.  Return true if the connection was
     # successful.  Otherwise, raise an exception.
     def connect(remote_address)
+      @transcript_writer.info("Script executing command", "connect", *remote_address.map{|a| a.inspect}) if @transcript_writer
       connected = false
       connect_error = nil
       @conn = @net.connect(remote_address) do |c|
@@ -109,14 +117,17 @@ module ScripTTY
     def on(pattern, opts={}, &block)
       case pattern
       when String
+        @transcript_writer.info("Script executing command", "on", "String", pattern.inspect) if @transcript_writer
         ph = PatternHandle.new(/#{Regexp.escape(pattern)}/n, block, opts[:background])
       when Regexp
+        @transcript_writer.info("Script executing command", "on", "Regexp", pattern.inspect) if @transcript_writer
         if pattern.kcode == "none"
           ph = PatternHandle.new(pattern, block, opts[:background])
         else
           ph = PatternHandle.new(/#{pattern}/n, block, opts[:background])
         end
       when ScreenPattern
+        @transcript_writer.info("Script executing command", "on", "ScreenPattern", pattern.name, opts[:background] ? "BACKGROUND" : "") if @transcript_writer
         ph = PatternHandle(pattern, block, opts[:background])
       else
         raise TypeError.new("Unsupported pattern type: #{pattern.class.inspect}")
@@ -127,6 +138,7 @@ module ScripTTY
 
     # Sleep for the specified number of seconds
     def sleep(seconds)
+      @transcript_writer.info("Script executing command", "sleep", seconds.inspect) if @transcript_writer
       sleep_done = false
       @net.timer(seconds) { sleep_done = true ; @net.suspend }
       dispatch until sleep_done
@@ -153,6 +165,7 @@ module ScripTTY
     #  }
     def expect(pattern=nil)
       raise ArgumentError.new("no pattern and no block given") if !pattern and !block_given?
+      @transcript_writer.info("Script expect block BEGIN") if @transcript_writer and block_given?
       push_patterns
       begin
         on(pattern) if pattern
@@ -160,6 +173,7 @@ module ScripTTY
         wait
       ensure
         pop_patterns
+        @transcript_writer.info("Script expect block END") if @transcript_writer and block_given?
       end
     end
 
@@ -178,6 +192,7 @@ module ScripTTY
     #
     # Clears the character-match buffer on return.
     def wait
+      @transcript_writer.info("Script executing command", "wait") if @transcript_writer
       dispatch until @wait_finished
       refresh_timeout
       @wait_finished = false
@@ -191,14 +206,17 @@ module ScripTTY
     # finished being sent.  Remaining bytes will be sent during an expect,
     # wait, or sleep call.
     def send(bytes)
+      @transcript_writer.from_client(bytes) if @transcript_writer
       @conn.write(bytes)
       true
     end
 
     # Close the connection and exit.
     def exit
+      @transcript_writer.info("Script executing command", "exit") if @transcript_writer
       @net.exit
       dispatch until @net.done?
+      @transcript_writer.close if @transcript_writer
     end
 
     private
@@ -246,14 +264,17 @@ module ScripTTY
       end
 
       def handle_connection_close   # XXX - we should raise an error when disconnected prematurely
+        @transcript_writer.server_close("connection closed") if @transcript_writer
         self.exit
       end
 
       def handle_connect
+        @transcript_writer.server_open(*@conn.remote_address) if @transcript_writer
         init_term
       end
 
       def handle_receive_bytes(bytes)
+        @transcript_writer.from_server(bytes) if @transcript_writer
         @match_buffer << bytes
         @term.feed_bytes(bytes)
         check_expect_match
