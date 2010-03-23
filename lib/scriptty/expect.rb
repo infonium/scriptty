@@ -27,7 +27,7 @@ module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout ]
+    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
 
     attr_reader :term   # The terminal emulation object
 
@@ -47,6 +47,7 @@ module ScripTTY
       @timeout = nil
       @timeout_timer = nil
       @transcript_writer = options[:transcript_writer]
+      @screen_patterns = {}
     end
 
     def set_timeout(seconds)
@@ -149,10 +150,19 @@ module ScripTTY
       nil
     end
 
-    # Return the named ScreenPattern
-    # XXX TODO
+    # Return the named ScreenPattern (or nil if no such pattern exists)
     def screen(name)
-      
+      @screen_patterns[name.to_sym]
+    end
+
+    # Load screens from the specified filenames
+    def load_screens(filenames)
+      filenames.each do |filename|
+        ScreenPattern.parse(File.read(filename)).each do |pattern|
+          @screen_patterns[pattern.name.to_sym] = pattern
+        end
+      end
+      nil
     end
 
     # Convenience function.
