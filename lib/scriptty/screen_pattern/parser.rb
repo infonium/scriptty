@@ -387,7 +387,10 @@ module ScripTTY
                       rel_pos[0].is_a?(Integer) and rel_pos[1].is_a?(Integer) and length.is_a?(Integer))
                 parse_fail("incorrect field format: should be (name, (row, col), length)", lineno+i)
               end
-              rel_range = [rel_pos[0], rel_pos[1]..rel_pos[1]+length]
+              unless length > 0
+                parse_fail("field length must be positive", lineno+i)
+              end
+              rel_range = [rel_pos[0], rel_pos[1]..rel_pos[1]+length-1]
               add_field_to_screen(field_name, abs_pos(rel_range), lineno+i)
             end
           else

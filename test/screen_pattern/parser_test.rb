@@ -74,6 +74,31 @@ class ParserTest < Test::Unit::TestCase
     assert_equal add_pos(offset, expected), result
   end
 
+  def test_explicit_fields
+    result = []
+    ScripTTY::ScreenPattern::Parser.parse(read_file("explicit_fields.txt")) do |screen|
+      result << screen
+    end
+    offset = [3,4]
+    expected = [{
+      :name => "explicit_fields",
+      :properties => {
+        "position" => [0,0],
+        "size" => [4,5],
+        "cursor_pos" => [0,0],
+        "fields" => {
+          "field1" => [0,2..4],
+          "apple" => [1, 0..0],
+          "orange" => [1, 2..2],
+          "banana" => [1, 4..4],
+          "foo" => [2,0..1],
+          "bar" => [3,3..4],
+        },
+      },
+    }]
+    assert_equal add_pos(offset, expected), result
+  end
+
   # Multiple patterns can be specified in a single file
   def test_multiple_patterns
     result = []

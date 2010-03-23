@@ -1,0 +1,22 @@
+# Screen pattern with explicit fields
+[explicit_fields]
+position: (3,4)
+size: (4,5)
+char_cursor: "@"
+char_ignore: "."
+char_field: "#"
+fields: <<END
+    ("field1", (0,2), 3)
+    ("apple", (1,0), 1)
+    ("orange", (1,2), 1)
+    ("banana", (1,4), 1)
+    ("foo", (2,0), 2)
+END
+text: <<END
++-----+
+|@....|
+|.....|
+|.....|
+|...##| ("bar")     # Mixing explicit and implicit fields is allowed.
++-----+
+END
