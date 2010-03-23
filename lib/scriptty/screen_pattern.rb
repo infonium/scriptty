@@ -79,15 +79,17 @@ module ScripTTY
         text = term.text
         @matches.each do |pos, str|
           row, col = pos
-          col_range = col..col + str.length
+          col_range = col..col+str.length-1
           return nil unless text[row][col_range] == str
         end
       end
 
       fields = {}
-      @field_ranges.each_pair do |k, range|
-        row, col_range = range
-        fields[k] = text[row][col_range]
+      if @field_ranges
+        @field_ranges.each_pair do |k, range|
+          row, col_range = range
+          fields[k] = text[row][col_range]
+        end
       end
       fields
     end

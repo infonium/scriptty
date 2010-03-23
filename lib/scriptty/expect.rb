@@ -27,9 +27,11 @@ module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
+    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
 
     attr_reader :term   # The terminal emulation object
+
+    attr_reader :match  # The last non-background expect match.  For a ScreenPattern match, this is a Hash of fields.  For a String or Regexp match, this is a MatchData object.
 
     attr_accessor :transcript_writer # Set this to an instance of ScripTTY::Util::Transcript::Writer
 
@@ -132,7 +134,7 @@ module ScripTTY
         end
       when ScreenPattern
         @transcript_writer.info("Script executing command", "on", "ScreenPattern", pattern.name, opts[:background] ? "BACKGROUND" : "") if @transcript_writer
-        ph = PatternHandle(pattern, block, opts[:background])
+        ph = PatternHandle.new(pattern, block, opts[:background])
       else
         raise TypeError.new("Unsupported pattern type: #{pattern.class.inspect}")
       end
@@ -336,6 +338,7 @@ module ScripTTY
 
             # Make the next wait() call return
             unless ph.background?
+              @match = m
               @wait_finished = true
               @net.suspend
               return true
