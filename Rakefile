@@ -15,6 +15,7 @@ EOF
     gemspec.add_dependency "treetop"
     gemspec.add_dependency "multibyte"
   end
+  Jeweler::GemcutterTasks.new
 rescue LoadError
   puts "Jeweler not available. Install it with: gem install jeweler"
 end
