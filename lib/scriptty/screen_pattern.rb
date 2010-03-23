@@ -25,6 +25,7 @@ module ScripTTY
         Parser.parse(s) do |spec|
           retval << new(spec[:name], spec[:properties])
         end
+        retval
       end
 
       def from_term(term, name=nil)
