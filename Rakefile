@@ -42,3 +42,8 @@ begin
 rescue LoadError
   $stderr.puts "warning: rcov not installed; coverage testing not available."
 end
+
+task :clobber do
+  rm "scriptty.gemspec"
+  rm_r "pkg"
+end
