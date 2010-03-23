@@ -156,7 +156,14 @@ module ScripTTY
     end
 
     # Load screens from the specified filenames
-    def load_screens(filenames)
+    def load_screens(filenames_or_glob)
+      if filenames_or_glob.is_a?(String)
+        filenames = Dir.glob(filenames_or_glob)
+      elsif filenames_or_glob.is_a?(Array)
+        filenames = filenames_or_glob
+      else
+        raise ArgumentError.new("load_screens takes a string(glob) or an array, not #{filenames.class.name}")
+      end
       filenames.each do |filename|
         ScreenPattern.parse(File.read(filename)).each do |pattern|
           @screen_patterns[pattern.name.to_sym] = pattern
