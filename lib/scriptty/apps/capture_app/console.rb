@@ -74,8 +74,8 @@ module ScripTTY
         private
 
           def handle_receive_bytes(bytes)
-            bytes.split("").each do |byte|
-              if byte =~ /\A[\x20-\x7e]\Z/m # printable
+            bytes.split(//n).each do |byte|
+              if byte =~ /\A[\x20-\x7e]\Z/mn # printable
                 @prompt_input << byte
               elsif byte == "\b" or byte == "\x7f"  # backspace or DEL
                 @prompt_input = @prompt_input[0..-2] || ""
