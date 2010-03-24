@@ -241,6 +241,23 @@ module ScripTTY
       @transcript_writer.close if @transcript_writer
     end
 
+    # Generate a ScreenPattern from the current terminal state, and optionally
+    # append it to the specified file.
+    #
+    # NOTE: This method is intended for script development only; it is not
+    # exported to the Evaluator.
+    def dump(filename=nil)
+      result = ScreenPattern.from_term(@term).generate
+      if filename
+        File.open(filename, "a") { |outfile|
+          outfile.puts(result); outfile.puts("")
+        }
+        nil
+      else
+        result
+      end
+    end
+
     private
 
       # Kick the watchdog timer
