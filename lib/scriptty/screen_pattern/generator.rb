@@ -36,6 +36,7 @@ module ScripTTY
         #   matching text or fields there.  :force_cursor may also be a
         #   Regexp, in which case the regexp must match in order for the field
         #   to be replaced.  :force_fields takes precedence over :force_cursor.
+        #   :force_cursor defaults to the regexp /\s/
         # [:ignore]
         #   If specified, this is an array of [row, col0..col1] ranges.
         def generate(name, properties_and_options={})
@@ -50,7 +51,7 @@ module ScripTTY
 
       def initialize(name, properties={})
         properties = properties.dup
-        @force_cursor = properties.delete(:force_cursor)
+        @force_cursor = properties.delete(:force_cursor) || /\s/
         @force_fields = properties.delete(:force_fields)
         @ignore = properties.delete(:ignore)
         load_spec(name, properties)
