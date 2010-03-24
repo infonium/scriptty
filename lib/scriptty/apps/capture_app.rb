@@ -20,6 +20,7 @@ require 'optparse'
 require 'scriptty/net/event_loop'
 require 'scriptty/util/transcript/writer'
 require 'scriptty/term'
+require 'scriptty/screen_pattern'
 require 'logger'
 require 'stringio'
 
@@ -38,6 +39,7 @@ module ScripTTY
         @net = ScripTTY::Net::EventLoop.new
         @log_stringio = StringIO.new
         @log = Logger.new(@log_stringio)
+        @dump_counter = 1
       end
 
       def detach_console(console)
@@ -88,6 +90,8 @@ module ScripTTY
           comment = $1.strip
           @output_file.info("Comment: #{comment}") if @output_file
           log.info("Comment: #{comment}")
+        when /^d(ump)?$/i  # Generate ScreenPattern based on a screen dump and write it to a file.
+          cmd_dump
         else
           log.warn("Unknown console command: #{cmd}")
         end
@@ -181,6 +185,9 @@ module ScripTTY
             opts.on("-o", "--output FILE", "Write transcript to FILE") do |optarg|
               options[:output] = optarg
             end
+            opts.on("-O", "--output-dir DIR", "Allow writing screenshots and other outputs to DIR (default: not allowed)") do |optarg|
+              options[:output_dir] = optarg
+            end
             opts.on("-a", "--[no-]append", "Append to output file instead of overwriting it") do |optarg|
               options[:append] = optarg
             end
@@ -204,6 +211,38 @@ module ScripTTY
             raise ArgumentError.new("Host cannot be empty") if host.empty?
           end
           [host, port]
+        end
+
+        def cmd_dump
+          unless @options[:output_dir]
+            log.error("Cannot dump: --output-dir not enabled")
+            return
+          end
+          unless @term
+            log.error("Cannot dump: No terminal")
+            return
+          end
+
+          name = nil
+          filepath = nil
+          loop do
+            name = "dump#{@dump_counter}"
+            filepath = File.join(@options[:output_dir], "#{name}.txt")
+            break unless File.exist?(filepath)
+            @dump_counter += 1
+          end
+          pattern = ScreenPattern.from_term(@term, name)
+          dumped_pattern = pattern.generate
+
+          File.open(filepath, "w") do |outfile|
+            outfile.puts(dumped_pattern)
+            outfile.puts("")
+          end
+          @dump_counter += 1
+
+          @output_file.info("Screen dumped", name, filepath) if @output_file
+          log.info("Screen dumped [#{name}] #{filepath}")
+          nil
         end
     end
   end

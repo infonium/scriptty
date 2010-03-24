@@ -80,7 +80,7 @@ module ScripTTY
               elsif byte == "\b" or byte == "\x7f"  # backspace or DEL
                 @prompt_input = @prompt_input[0..-2] || ""
               elsif byte == "\r"
-                handle_command_entered(@prompt_input)
+                handle_command_entered(@prompt_input.strip)
                 @prompt_input = ""
               elsif byte == "\n"
                 # ignore
