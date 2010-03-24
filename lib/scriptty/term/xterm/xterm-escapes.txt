@@ -40,7 +40,9 @@
         'P' => t_delete_characters
         'S' => t_scroll_up
         'T' => t_scroll_down
+        'X' => t_erase_characters
         'c' => t_send_device_attributes_primary # Primary DA
+        'd' => t_line_position_absolute
         'g' => t_tab_clear
         'h' => t_set_mode
         'l' => t_reset_mode
@@ -51,6 +53,9 @@
     }
     ']' => t_parse_osc => { # OSC - "Operating system command"
         '\007' => t_osc_set_text_params
+    }
+    [()*+\-./] => {        # Designate G0/G1/G2/G3 character set (ISO 2022)
+        * => t_designate_gx_charset
     }
 }
 '\377' => {

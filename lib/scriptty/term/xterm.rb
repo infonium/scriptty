@@ -290,6 +290,14 @@ module ScripTTY # :nodoc:
 
         # Erase, starting with the character under the cursor and extending to the end of the line.
         # Return true.
+        def erase_characters!(count=1)
+          @glyphs.replace_at(@cursor.row, @cursor.column, " "*([@width-@cursor.column, count].min))
+          @attrs.replace_at(@cursor.row, @cursor.column, " "*([@width-@cursor.column, count].min))
+          true
+        end
+
+        # Erase, starting with the character under the cursor and extending to the end of the line.
+        # Return true.
         def erase_to_end_of_line!
           @glyphs.replace_at(@cursor.row, @cursor.column, " "*(@width-@cursor.column))
           @attrs.replace_at(@cursor.row, @cursor.column, " "*(@width-@cursor.column))
@@ -542,6 +550,15 @@ module ScripTTY # :nodoc:
           @cursor.pos = [row, column]
         end
 
+        # ESC [ Ps d
+        def t_line_position_absolute(fsm)
+          row = parse_csi_params(fsm.input_sequence)[0] || 0
+          row -= 1
+          row = 0 if row < 0
+          row = @height-1 if row >= @height
+          @cursor.row = row
+        end
+
         # Select graphic rendition
         # ESC [ Pm m
         def t_sgr(fsm)
@@ -583,6 +600,12 @@ module ScripTTY # :nodoc:
           delete_characters!(count)
         end
 
+        # ESC [ Ps X
+        def t_erase_characters(fsm)
+          count = parse_csi_params(fsm.input_sequence)[0] || 1
+          erase_characters!(count)
+        end
+
         # ESC [ Ps g
         def t_tab_clear(fsm) end  # TODO
 
@@ -602,6 +625,8 @@ module ScripTTY # :nodoc:
         def t_telnet_subnegotiation(fsm) end  # TODO
 
         def t_osc_set_text_params(fsm) end # TODO - used for setting window title, etc.
+
+        def t_designate_gx_charset(fsm) end # TODO
 
         # ESC [ ... h
         def t_set_mode(fsm)
