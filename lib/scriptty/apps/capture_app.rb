@@ -231,7 +231,7 @@ module ScripTTY
             break unless File.exist?(filepath)
             @dump_counter += 1
           end
-          pattern = ScreenPattern.from_term(@term, name)
+          pattern = ScreenPattern.from_term(@term, :name => name)
           dumped_pattern = pattern.generate
 
           File.open(filepath, "w") do |outfile|

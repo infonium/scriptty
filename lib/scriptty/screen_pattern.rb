@@ -28,8 +28,8 @@ module ScripTTY
         retval
       end
 
-      def from_term(term, name=nil)
-        from_text(term.text, :name => name, :cursor_pos => term.cursor_pos)
+      def from_term(term, opts={})
+        from_text(term.text, {:cursor_pos => term.cursor_pos}.merge(opts))
       end
 
       def from_text(text, opts={})
