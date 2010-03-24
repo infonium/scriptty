@@ -373,11 +373,6 @@ module ScripTTY # :nodoc:
           nil
         end
 
-        def error(message)  # XXX - This sucks
-          raise ArgumentError.new(message)
-          #puts message  # DEBUG FIXME
-        end
-
         def t_reset(fsm)
           reset_to_initial_state!
         end
@@ -466,7 +461,7 @@ module ScripTTY # :nodoc:
               @flags[:wraparound_mode] = true
             when 47   # Use alternate screen buffer
             else
-              return error("unknown DEC private mode set (escape sequence: #{fsm.input_sequence.inspect})")
+              raise Util::FSM::NoMatch.new("unknown DEC private mode set", fsm.input_sequence, fsm.state)
             end
           end
         end
@@ -480,7 +475,7 @@ module ScripTTY # :nodoc:
               @flags[:wraparound_mode] = false
             when 47   # Use normal screen buffer
             else
-              return error("unknown DEC private mode reset (escape sequence: #{fsm.input_sequence.inspect})")
+              raise Util::FSM::NoMatch.new("unknown DEC private mode reset", fsm.input_sequence, fsm.state)
             end
           end
         end
@@ -615,7 +610,7 @@ module ScripTTY # :nodoc:
             when 4   # Insert mode
               @flags[:insert_mode] = true
             else
-              return error("unknown set mode (escape sequence: #{fsm.input_sequence.inspect})")
+              raise Util::FSM::NoMatch.new("unknown set mode", fsm.input_sequence, fsm.state)
             end
           end
         end
@@ -627,7 +622,7 @@ module ScripTTY # :nodoc:
             when 4   # Replace mode
               @flags[:insert_mode] = false
             else
-              return error("unknown reset mode (escape sequence: #{fsm.input_sequence.inspect})")
+              raise Util::FSM::NoMatch.new("unknown reset mode", fsm.input_sequence, fsm.state)
             end
           end
         end

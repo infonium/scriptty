@@ -356,11 +356,6 @@ module ScripTTY # :nodoc:
           nil
         end
 
-        def error(message)  # XXX - This sucks
-          raise ArgumentError.new(message)
-          #puts message  # DEBUG FIXME
-        end
-
         def t_reset(fsm)
           reset_to_initial_state!
         end
