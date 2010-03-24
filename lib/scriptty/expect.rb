@@ -271,7 +271,9 @@ module ScripTTY
       # Enable timeout handling (if @timeout is set)
       def enable_timeout
         if @timeout
-          @timeout_timer = @net.timer(@timeout, :daemon=>true) { raise ScripTTY::Exception::Timeout.new("Operation timed out") }
+          @timeout_timer = @net.timer(@timeout, :daemon=>true) {
+            raise ScripTTY::Exception::Timeout.new("Timed out waiting for #{@effective_patterns.map{|pattern_handle| pattern_handle.pattern}.inspect}")
+          }
         end
         nil
       end
