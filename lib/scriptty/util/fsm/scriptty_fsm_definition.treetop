@@ -155,7 +155,7 @@ grammar ScripTTYFSMDefinition
   end
 
   rule str_single
-    "\\" [enrt"'\\] {
+    "\\" [enrt"'\\\-] {
       def to_s
         case text_value[1..-1]
         when 'e'
@@ -172,6 +172,8 @@ grammar ScripTTYFSMDefinition
           "'"
         when "\\"
           "\\"
+        when "-"
+          "-"
         end
       end
     }
