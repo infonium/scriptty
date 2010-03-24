@@ -94,8 +94,8 @@ module ScripTTY
       fields
     end
 
-    def generate(name=nil)
-      Generator.generate(name || "untitled", :cursor_pos => @cursor_pos, :matches => @matches, :fields => @field_ranges, :position => @position, :size => @size)
+    def generate
+      Generator.generate(@name, :cursor_pos => @cursor_pos, :matches => @matches, :fields => @field_ranges, :position => @position, :size => @size)
     end
   end
 end
