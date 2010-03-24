@@ -394,7 +394,10 @@ module ScripTTY
               add_field_to_screen(field_name, abs_pos(rel_range), lineno+i)
             end
           else
-            v = abs_pos(v) if k == "cursor_pos"
+            if k == "cursor_pos"
+              ensure_position   # "position", if set, must be set before this field is set
+              v = abs_pos(v)
+            end
             # Don't allow setting a screen property more than once to different values.
             old_value = @screen_properties[k]
             unless old_value.nil? or old_value == v
