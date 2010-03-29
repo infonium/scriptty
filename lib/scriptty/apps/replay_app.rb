@@ -18,6 +18,8 @@
 
 require 'optparse'
 require 'scriptty/net/event_loop'
+require 'scriptty/net/console'
+require 'scriptty/net/password_prompt'
 require 'scriptty/util/transcript/reader'
 require 'scriptty/term'
 require 'logger'
@@ -53,11 +55,11 @@ module ScripTTY
       def main
         @output_file = Util::Transcript::Writer.new(File.open(@options[:output], "w")) if @options[:output]
         @net.on_accept(@options[:console_addrs] || [], :multiple => true) do |conn|
-          p = CaptureApp::PasswordPrompt.new(conn, "Console password: ")
+          p = ScripTTY::Net::PasswordPrompt.new(conn, "Console password: ")
           p.authenticate { |password| password == @console_password }
           p.on_fail { conn.write("Authentiation failed.\r\n") { conn.close } }
           p.on_success {
-            @attached_consoles << CaptureApp::Console.new(conn, self)
+            @attached_consoles << ScripTTY::Net::Console.new(conn, self)
             @attached_consoles.each { |c| c.refresh! }
           }
         end
@@ -224,6 +226,3 @@ module ScripTTY
     end
   end
 end
-
-require 'scriptty/apps/capture_app/password_prompt'
-require 'scriptty/apps/capture_app/console'

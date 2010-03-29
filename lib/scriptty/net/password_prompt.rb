@@ -1,8 +1,5 @@
-require 'scriptty/apps/capture_app'
-
 module ScripTTY
-  module Apps
-    class CaptureApp  # reopen
+  module Net
       class PasswordPrompt
         IAC_WILL_ECHO = "\377\373\001"
         IAC_WONT_ECHO = "\377\374\001"
@@ -60,6 +57,5 @@ module ScripTTY
             nil
           end
       end
-    end
   end
 end

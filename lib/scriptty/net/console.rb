@@ -1,8 +1,5 @@
-require 'scriptty/apps/capture_app'
-
 module ScripTTY
-  module Apps
-    class CaptureApp  # reopen
+  module Net
       class Console
         IAC_WILL_ECHO = "\377\373\001"
         IAC_WONT_ECHO = "\377\374\001"
@@ -99,6 +96,5 @@ module ScripTTY
             @app.detach_console(self)
           end
       end
-    end
   end
 end
