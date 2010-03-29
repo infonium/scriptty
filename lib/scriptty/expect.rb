@@ -27,7 +27,7 @@ module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
+    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
 
     attr_reader :term   # The terminal emulation object
 
@@ -239,6 +239,16 @@ module ScripTTY
     # wait, or sleep call.
     def send(bytes)
       @transcript_writer.from_client(bytes) if @transcript_writer
+      @conn.write(bytes)
+      true
+    end
+
+    # Send password to the remote application.
+    #
+    # This works like the send method, but "**PASSWORD**" is shown in the
+    # transcript instead of the actual bytes sent.
+    def send_password(bytes)
+      @transcript_writer.from_client("**PASSWORD**") if @transcript_writer
       @conn.write(bytes)
       true
     end
