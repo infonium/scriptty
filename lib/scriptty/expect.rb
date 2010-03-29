@@ -52,6 +52,16 @@ module ScripTTY
       @screen_patterns = {}
     end
 
+    # Get instance variable from the Evaluator
+    def [](varname)
+      @evaluator.instance_variable_get("@#{varname}")
+    end
+
+    # Set an instance variable on the Evaluator
+    def []=(varname, value)
+      @evaluator.instance_variable_set("@#{varname}", value)
+    end
+
     def set_timeout(seconds)
       raise ArgumentError.new("argument to set_timeout must be Numeric or nil") unless seconds.is_a?(Numeric) or seconds.nil?
       if seconds
