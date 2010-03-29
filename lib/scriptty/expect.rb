@@ -27,11 +27,12 @@ module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
+    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :capture, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
 
     attr_reader :term   # The terminal emulation object
 
-    attr_reader :match  # The last non-background expect match.  For a ScreenPattern match, this is a Hash of fields.  For a String or Regexp match, this is a MatchData object.
+    attr_reader :capture  # The last non-background captured fields.  For a ScreenPattern match, this is a Hash of fields.  For a String or Regexp match, this is a MatchData object.
+    alias match capture   # "match" is the deprecated name for "capture"
 
     attr_accessor :transcript_writer # Set this to an instance of ScripTTY::Util::Transcript::Writer
 
@@ -373,7 +374,7 @@ module ScripTTY
 
             # Make the next wait() call return
             unless ph.background?
-              @match = m
+              @capture = m
               @wait_finished = true
               @net.suspend
               return true
