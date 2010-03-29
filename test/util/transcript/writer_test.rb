@@ -34,6 +34,9 @@ class TranscriptWriterTest < Test::Unit::TestCase
     writer.client_close("msg")
     writer.server_close("msg")
     writer.info("msg")
+    writer.exception_head("ArgumentError", "msg")
+    writer.exception_backtrace("line1")
+    writer.exception_backtrace("line2")
     writer.close
     expected = <<-'EOF'.strip.split("\n").map{|line| line.strip}.join("\n") + "\n"
       [88.000] Copen "10.0.0.5" "55555"
@@ -45,6 +48,9 @@ class TranscriptWriterTest < Test::Unit::TestCase
       [88.000] Cx "msg"
       [88.000] Sx "msg"
       [88.000] * "msg"
+      [88.000] EXC "ArgumentError" "msg"
+      [88.000] EX+ "line1"
+      [88.000] EX+ "line2"
     EOF
   end
 
@@ -122,5 +128,31 @@ class TranscriptWriterTest < Test::Unit::TestCase
       [5.001] * "five"
     EOF
     assert_equal expected, sio.string
+  end
+
+  # Test the exception_head and exception_backtrace messages
+  def test_exception
+    sio = StringIO.new
+    writer = ScripTTY::Util::Transcript::Writer.new(sio)
+    writer.override_timestamp = 0.0
+    begin
+      raise ArgumentError.new("foo")
+    rescue => e
+      writer.exception(e)
+    end
+    writer.close
+
+    # Parse the transcript
+    sio = StringIO.new(sio.string)
+    reader = ScripTTY::Util::Transcript::Reader.new(sio)
+    entries = []
+    while (entry = reader.next_entry)
+      entries << entry
+    end
+    assert_equal [0.0, :exception_head, ["ArgumentError", "foo"]], entries.shift
+    assert_match /^\[0\.0, :exception_backtrace, \["[^"]*:in `test_exception'"\]\]$/, entries.shift.inspect
+    until entries.empty?
+      assert_equal :exception_backtrace, entries.shift[1]
+    end
   end
 end

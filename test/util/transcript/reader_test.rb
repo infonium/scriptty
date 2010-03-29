@@ -34,6 +34,9 @@ class TranscriptReaderTest < Test::Unit::TestCase
       [5.000] Sx "disconnect"
       [5.000] Sx
       [5] Cx
+      [6.000] EXC "RuntimeError" "foo"
+      [6.001] EX+ "line1"
+      [6.001] EX+ "line2"
     EOF
     expected = [
       [0.0, :info, ["Informational message", "with argument", "\xff"]],
@@ -48,6 +51,9 @@ class TranscriptReaderTest < Test::Unit::TestCase
       [5.0, :server_close, ["disconnect"]],
       [5.0, :server_close, []],
       [5.0, :client_close, []],
+      [6.0, :exception_head, ["RuntimeError", "foo"]],
+      [6.001, :exception_backtrace, ["line1"]],
+      [6.001, :exception_backtrace, ["line2"]],
     ]
     reader = ScripTTY::Util::Transcript::Reader.new
     actual = input_lines.map{|line| reader.parse_line(line) }

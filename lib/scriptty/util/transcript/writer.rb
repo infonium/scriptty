@@ -86,6 +86,31 @@ module ScripTTY
           write_event("*", *args)
         end
 
+        # Convenience function: Log an exception object
+        def exception(exc)
+          klass_name = exc.class.to_s
+          if exc.respond_to?(:message)
+            message = exc.message.to_s
+          else
+            message = exc.to_s
+          end
+          exception_head(klass_name, message)
+          exc.backtrace.each do |line|
+            exception_backtrace(line)
+          end
+          nil
+        end
+
+        # Log exception - header - class and message
+        def exception_head(klass_name, message)
+          write_event("EXC", klass_name, message)
+        end
+
+        # Log exception - single backtrace line
+        def exception_backtrace(line)
+          write_event("EX+", line)
+        end
+
         private
 
           def write_event(type, *args)

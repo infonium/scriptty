@@ -45,6 +45,8 @@ module ScripTTY
           "Cx" => :client_close,  # server closed connection
           "Sp" => :server_parsed,  # parsed escape sequence from server
           "Cp" => :client_parsed,  # parsed escape sequence from client
+          "EXC" => :exception_head,    # Exception header - exception class & message
+          "EX+" => :exception_backtrace,  # Exception backtrace - single line of a backtrace
         }
 
         def initialize(io=nil)

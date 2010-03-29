@@ -326,11 +326,7 @@ module ScripTTY
 
       def transcribe_connect_error(e)
         if @transcript_writer
-          @transcript_writer.info("Connect error", e.class.name, e.to_s, e.backtrace.join("\n"))
-          # Write the backtrace out as separate records, for the convenience of people reading the logs without a parser.
-          e.backtrace.each do |line|
-            @transcript_writer.info("Connect error backtrace", line)
-          end
+          @transcript_writer.exception(e)
         end
       end
 
