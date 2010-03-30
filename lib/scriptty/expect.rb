@@ -22,12 +22,13 @@ require 'scriptty/term'
 require 'scriptty/screen_pattern'
 require 'scriptty/util/transcript/writer'
 require 'set'
+require 'pp'
 
 module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :capture, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens ]
+    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :capture, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens, :print, :puts, :p, :pp ]
 
     attr_reader :term   # The terminal emulation object
 
@@ -277,6 +278,30 @@ module ScripTTY
       else
         result
       end
+    end
+
+    # Like regular Ruby "puts", but also logs to the transcript.
+    def puts(*args)
+      @transcript_writer.info("puts", *args.map{|a| a.to_s}) if @transcript_writer
+      Kernel.puts(*args)
+    end
+
+    # Like regular Ruby "print", but also logs to the transcript.
+    def print(*args)
+      @transcript_writer.info("print", *args.map{|a| a.to_s}) if @transcript_writer
+      Kernel.print(*args)
+    end
+
+    # Like regular Ruby "p", but also logs to the transcript.
+    def p(*args)
+      @transcript_writer.info("p", *args.map{|a| a.to_s}) if @transcript_writer
+      Kernel.p(*args)
+    end
+
+    # Like regular Ruby "pp", but also logs to the transcript.
+    def pp(*args)
+      @transcript_writer.info("pp", *args.map{|a| a.to_s}) if @transcript_writer
+      PP.pp(*args)
     end
 
     private
