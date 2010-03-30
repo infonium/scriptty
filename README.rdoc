@@ -13,6 +13,23 @@ Limited DG410 and XTerm support.
 - Treetop
 - Multibyte
 
+= Known issues
+
+== Glassfish SocketChannel.keyFor bug
+
+There is a known bug in the JDK that causes SocketChannel.keyFor to behave
+erroneously under some versions of Glassfish.  (Glassfish versions 2.1.1 and
+3.0 or later are not affected.)  A possible workaround for v2.0 is to add the
+following to the appropriate section of your Glassfish config/domain.xml file:
+
+ <jvm-options>-Dcom.sun.enterprise.server.ss.ASQuickStartup=false</jvm-options>
+
+See the following pages for more information:
+
+- https://glassfish.dev.java.net/issues/show_bug.cgi?id=3027
+- http://docs.sun.com/app/docs/doc/820-4276/knownissuessges?a=view
+- http://bugs.sun.com/view_bug.do?bug_id=6562829
+
 = License
 
 Copyright © 2010  Infonium Inc.

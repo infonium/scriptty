@@ -95,6 +95,7 @@ module ScripTTY
         # not specifiy any on_accept or on_close/on_read_bytes callbacks.
         schan.register(@selector, SelectionKey::OP_ACCEPT)
         selection_key = schan.keyFor(@selector)   # SelectionKey object
+        check_glassfish_issue3027(selection_key)
         selection_key.attach({:listening_socket_wrapper => lw})
         if block
           block.call(lw)
@@ -138,6 +139,7 @@ module ScripTTY
         # on_connect or on_close/on_read_bytes callbacks.
         chan.register(@selector, SelectionKey::OP_CONNECT)
         selection_key = chan.keyFor(@selector)   # SelectionKey object
+        check_glassfish_issue3027(selection_key)
         selection_key.attach({:connection_wrapper => cw})
         if block_given?
           yield cw
@@ -281,6 +283,7 @@ module ScripTTY
               end
               if accepted
                 socket_channel.register(@selector, SelectionKey::OP_READ) # Register the channel with the selector
+                check_glassfish_issue3027(socket_channel.keyFor(@selector))
                 cw = ConnectionWrapper.new(self, socket_channel)
                 invoke_callback(k.channel, :on_accept, cw)
               end
@@ -486,6 +489,33 @@ module ScripTTY
           k = channel.keyFor(@selector)   # SelectionKey object
           k.attach({}) unless k.attachment
           k.attachment
+        end
+
+        # Check for a known issue that sometimes occurs when running under
+        # Glassfish.
+        def check_glassfish_issue3027(selection_key)
+          return unless selection_key.nil?
+          message = <<EOF
+ERROR: Erroneous Java/Glassfish SocketChannel.keyFor detected"
+********************************************************************************
+* There is a known bug in the JDK that causes SocketChannel.keyFor to behave
+* erroneously under some versions of Glassfish.  (Glassfish versions 2.1.1 and
+* 3.0 or later are not affected.)  A possible workaround for v2.0 is to add the
+* following to the appropriate section of your Glassfish config/domain.xml
+* file:
+*
+*  <jvm-options>-Dcom.sun.enterprise.server.ss.ASQuickStartup=false</jvm-options>
+*
+* See the following pages for more information:
+*
+* - https://glassfish.dev.java.net/issues/show_bug.cgi?id=3027
+* - http://docs.sun.com/app/docs/doc/820-4276/knownissuessges?a=view
+* - http://bugs.sun.com/view_bug.do?bug_id=6562829
+*
+********************************************************************************
+EOF
+          $stderr.puts message
+          raise RuntimeError.new("Erroneous Java/Glassfish SocketChannel.keyFor detected.  See the error log and https://glassfish.dev.java.net/issues/show_bug.cgi?id=3027")
         end
 
       class SocketChannelWrapper
