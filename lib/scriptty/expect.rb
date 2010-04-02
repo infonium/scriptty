@@ -65,6 +65,7 @@ module ScripTTY
     end
 
     def set_timeout(seconds)
+      fail_unexpected_block if block_given?
       raise ArgumentError.new("argument to set_timeout must be Numeric or nil") unless seconds.is_a?(Numeric) or seconds.nil?
       if seconds
         @timeout = seconds.to_f
@@ -77,11 +78,13 @@ module ScripTTY
 
     # Load and evaluate a script from a file.
     def eval_script_file(path)
+      fail_unexpected_block if block_given?
       eval_script_inline(File.read(path), path)
     end
 
     # Evaluate a script specified as a string.
     def eval_script_inline(str, filename=nil, lineno=nil)
+      fail_unexpected_block if block_given?
       @evaluator.instance_eval(str, filename || "(inline)", lineno || 1)
     end
 
@@ -166,11 +169,13 @@ module ScripTTY
 
     # Return the named ScreenPattern (or nil if no such pattern exists)
     def screen(name)
+      fail_unexpected_block if block_given?
       @screen_patterns[name.to_sym]
     end
 
     # Load screens from the specified filenames
     def load_screens(filenames_or_glob)
+      fail_unexpected_block if block_given?
       if filenames_or_glob.is_a?(String)
         filenames = Dir.glob(filenames_or_glob)
       elsif filenames_or_glob.is_a?(Array)
@@ -213,11 +218,13 @@ module ScripTTY
 
     # Push a copy of the effective pattern list to an internal stack.
     def push_patterns
+      fail_unexpected_block if block_given?
       @pattern_stack << @effective_patterns.dup
     end
 
     # Pop the effective pattern list from the stack.
     def pop_patterns
+      fail_unexpected_block if block_given?
       raise ArgumentError.new("pattern stack empty") if @pattern_stack.empty?
       @effective_patterns = @pattern_stack.pop
     end
@@ -226,6 +233,7 @@ module ScripTTY
     #
     # Clears the character-match buffer on return.
     def wait
+      fail_unexpected_block if block_given?
       @transcript_writer.info("Script executing command", "wait") if @transcript_writer
       check_expect_match unless @wait_finished
       dispatch until @wait_finished
@@ -240,6 +248,7 @@ module ScripTTY
     # finished being sent.  Remaining bytes will be sent during an expect,
     # wait, or sleep call.
     def send(bytes)
+      fail_unexpected_block if block_given?
       @transcript_writer.from_client(bytes) if @transcript_writer
       @conn.write(bytes)
       true
@@ -250,6 +259,7 @@ module ScripTTY
     # This works like the send method, but "**PASSWORD**" is shown in the
     # transcript instead of the actual bytes sent.
     def send_password(bytes)
+      fail_unexpected_block if block_given?
       @transcript_writer.from_client("**PASSWORD**") if @transcript_writer
       @conn.write(bytes)
       true
@@ -257,6 +267,7 @@ module ScripTTY
 
     # Close the connection and exit.
     def exit
+      fail_unexpected_block if block_given?
       @transcript_writer.info("Script executing command", "exit") if @transcript_writer
       @net.exit
       dispatch until @net.done?
@@ -269,6 +280,7 @@ module ScripTTY
     # NOTE: This method is intended for script development only; it is not
     # exported to the Evaluator.
     def dump(filename=nil)
+      fail_unexpected_block if block_given?
       result = ScreenPattern.from_term(@term).generate
       if filename
         File.open(filename, "a") { |outfile|
@@ -305,6 +317,12 @@ module ScripTTY
     end
 
     private
+
+      def fail_unexpected_block
+        caller[0] =~ /`(.*?)'/
+        method_name = $1
+        raise ArgumentError.new("`#{method_name}' method given but does not take a block")
+      end
 
       # Kick the watchdog timer
       def refresh_timeout
