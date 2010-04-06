@@ -56,5 +56,65 @@ class ExpectTest < Test::Unit::TestCase
       end
       assert_equal "`screen' method given but does not take a block", exc.message
     end
-  end
+
+    # ScripTTY should process bytes received at the same time separately, and buffer if necessary.
+    def test_byte_buffering
+      # Initialize objects
+      e = ScripTTY::Expect.new
+      evloop = e.instance_eval("@net")   # the EventLoop object
+
+      # Set up the test server
+      bytes_received = ""
+      server = evloop.listen(['127.0.0.1', 0])
+      server.on_accept do |conn|
+        server.close    # Stop accepting new connections after receiving the first connection
+        conn.write(
+          "Hello world!  This is a test."   # NOTE: The 2 spaces between these sentences are relevant
+        )
+      end
+
+      # Expect script
+      counts = {:hello => 0, :hello2 => 0}
+      begin
+        begin
+          e.set_timeout 10.0    # 10-second timeout
+          e.init_term "dg410"
+          e.load_screens File.dirname(__FILE__) + "/expect/screens.txt"
+          e.connect server.local_address
+
+          e.expect {
+            e.on(e.screen(:hello_world)) { counts[:hello] += 1 }
+            e.on(e.screen(:hello_world2)) { counts[:hello] += 1 }
+            puts "first expect" # DEBUG FIXME
+          }
+          assert_equal( {:hello => 1, :hello2 => 0}, counts )
+
+          e.expect {
+            e.on(e.screen(:hello_world)) { counts[:hello] += 1 }
+            e.on(e.screen(:hello_world2)) { counts[:hello] += 1 }
+            puts "second expect"  # DEBUG FIXME
+          }
+          assert_equal( {:hello => 2, :hello2 => 0}, counts )
+
+          e.expect {
+            e.on(e.screen(:hello_world)) { counts[:hello] += 1 }
+            e.on(e.screen(:hello_world2)) { counts[:hello] += 1 }
+            puts "3rd expect" # DEBUG FIXME
+          }
+          assert_equal( {:hello => 3, :hello2 => 0}, counts )
+
+          e.expect {
+            e.on(e.screen(:hello_world)) { counts[:hello] += 1 }
+            e.on(e.screen(:hello_world2)) { counts[:hello] += 1 }
+            puts "4th expect" # DEBUG FIXME
+          }
+          assert_equal( {:hello => 3, :hello2 => 1}, counts )
+        rescue
+          puts e.dump
+          raise
+        end
+      ensure
+        e.exit
+      end
+    end  end
 end

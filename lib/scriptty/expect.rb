@@ -40,12 +40,13 @@ module ScripTTY
     # Initialize the Expect object.
     def initialize(options={})
       @net = ScripTTY::Net::EventLoop.new
+      @receive_buffer = []    # Bytes received that have not been processed yet
       @suspended = false
       @effective_patterns = nil
       @term_name = nil
       @effective_patterns = []    # Array of PatternHandle objects
       @pattern_stack = []
-      @wait_finished = false
+      @wait_result = nil   # (non-background) PatternHandle that will cause the next wait() method to return
       @evaluator = Evaluator.new(self)
       @match_buffer = ""
       @timeout = nil
@@ -235,10 +236,10 @@ module ScripTTY
     def wait
       fail_unexpected_block if block_given?
       @transcript_writer.info("Script executing command", "wait") if @transcript_writer
-      check_expect_match unless @wait_finished
-      dispatch until @wait_finished
+      process_receive_buffer unless @wait_result
+      dispatch until @wait_result
       refresh_timeout
-      @wait_finished = false
+      @wait_result = nil
       nil
     end
 
@@ -386,9 +387,23 @@ module ScripTTY
 
       def handle_receive_bytes(bytes)
         @transcript_writer.from_server(bytes) if @transcript_writer
-        @match_buffer << bytes
-        @term.feed_bytes(bytes)
-        check_expect_match
+        @receive_buffer += bytes.split(//n)
+        process_receive_buffer
+      end
+
+      def process_receive_buffer
+        if @receive_buffer.empty?
+          check_expect_match
+        else
+          pos = 0
+          while (byte = @receive_buffer.shift)
+            @match_buffer << byte
+            @term.feed_byte(byte)
+            check_expect_match
+            break if @wait_result
+          end
+        end
+        nil
       end
 
       # Check for a match.
@@ -410,19 +425,25 @@ module ScripTTY
               raise "BUG: pattern is #{ph.pattern.inspect}"
             end
 
-            next unless m
+            next unless m   # Only continue if the current pattern matched
 
-            # Matched - Invoke the callback
-            ph.callback.call(m) if ph.callback
-
-            # Make the next wait() call return
-            unless ph.background?
+            if ph.background?
+              puts "BACKGROUND MATCH"     # DEBUG FIXME
+              # Patterns configured with :background=>true never cause wait()
+              # to return.  They are "background" patterns.
+              ph.callback.call(m) if ph.callback
+              found = true
+            elsif !@wait_result   # only match non-background patterns if no @wait_result is set
+              puts "FOREGROUND MATCH: #{ph.inspect}"     # DEBUG FIXME
+              puts "MB: #{@match_buffer.inspect}" # DEBUG FIXME
+              puts "RB: #{@receive_buffer.inspect}" # DEBUG FIXME
+              # Patterns configured without :background=>true cause wait()
+              # to return.  They are "foreground" patterns.
               @capture = m
-              @wait_finished = true
+              @wait_result = ph   # make the next (or current) wait() call return
+              ph.callback.call(m) if ph.callback
               @net.suspend
               return true
-            else
-              found = true
             end
           }
         end
