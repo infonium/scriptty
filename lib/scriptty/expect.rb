@@ -36,6 +36,7 @@ module ScripTTY
     alias match capture   # "match" is the deprecated name for "capture"
 
     attr_accessor :transcript_writer # Set this to an instance of ScripTTY::Util::Transcript::Writer
+    attr_accessor :transcript_writer_autoclose # Set this to false to disable closing transcript_writer on exit
 
     # Initialize the Expect object.
     def initialize(options={})
@@ -51,6 +52,7 @@ module ScripTTY
       @timeout = nil
       @timeout_timer = nil
       @transcript_writer = options[:transcript_writer]
+      @transcript_writer_autoclose = options[:transcript_writer_autoclose].nil? ? true : options[:transcript_writer_autoclose]
       @screen_patterns = {}
     end
 
@@ -271,7 +273,7 @@ module ScripTTY
       @transcript_writer.info("Script executing command", "exit") if @transcript_writer
       @net.exit
       dispatch until @net.done?
-      @transcript_writer.close if @transcript_writer
+      @transcript_writer.close if @transcript_writer && @transcript_writer_autoclose
     end
 
     # Generate a ScreenPattern from the current terminal state, and optionally
