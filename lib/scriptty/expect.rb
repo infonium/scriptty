@@ -87,20 +87,10 @@ module ScripTTY
       nil
     end
 
-    # Return the expanded path relative to basedir
-    def expand_path(path)
-      base = Pathname.new(@basedir)
-      p = Pathname.new(path)
-      unless p.absolute?
-        p = base.join(p)
-      end
-      p.expand_path.to_s
-    end
-
     # Load and evaluate a script from a file.
     def eval_script_file(path)
       fail_unexpected_block if block_given?
-      path = expand_path(path)
+      path = File.expand_path(path, @basedir)
       eval_script_inline(File.read(path), path)
     end
 
@@ -200,7 +190,7 @@ module ScripTTY
       fail_unexpected_block if block_given?
       filenames_or_glob = filenames_or_glob.to_s if filenames_or_glob.is_a?(Pathname)
       if filenames_or_glob.is_a?(String)
-        filenames_or_glob = expand_path(filenames_or_glob)
+        filenames_or_glob = File.expand_path(filenames_or_glob, @basedir)
         filenames = Dir.glob(filenames_or_glob)
       elsif filenames_or_glob.is_a?(Array)
         filenames = filenames_or_glob
