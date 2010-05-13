@@ -23,12 +23,13 @@ require 'scriptty/screen_pattern'
 require 'scriptty/util/transcript/writer'
 require 'set'
 require 'pp'
+require 'pathname'
 
 module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :capture, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_timeout, :load_screens, :print, :puts, :p, :pp ]
+    EXPORTED_METHODS = Set.new [:basedir, :init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :capture, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_basedir, :set_timeout, :load_screens, :print, :puts, :p, :pp ]
 
     attr_reader :term   # The terminal emulation object
 
@@ -37,6 +38,8 @@ module ScripTTY
 
     attr_accessor :transcript_writer # Set this to an instance of ScripTTY::Util::Transcript::Writer
     attr_accessor :transcript_writer_autoclose # Set this to false to disable closing transcript_writer on exit
+
+    attr_accessor :basedir    # The base directory for eval_script_file and load_screens.  Defaults to "."
 
     # Initialize the Expect object.
     def initialize(options={})
@@ -54,6 +57,7 @@ module ScripTTY
       @transcript_writer = options[:transcript_writer]
       @transcript_writer_autoclose = options[:transcript_writer_autoclose].nil? ? true : options[:transcript_writer_autoclose]
       @screen_patterns = {}
+      @basedir = "."
     end
 
     # Get instance variable from the Evaluator
@@ -78,9 +82,25 @@ module ScripTTY
       nil
     end
 
+    def set_basedir(path)
+      @basedir = path
+      nil
+    end
+
+    # Return the expanded path relative to basedir
+    def expand_path(path)
+      base = Pathname.new(@basedir)
+      p = Pathname.new(path)
+      unless p.absolute?
+        p = base.join(p)
+      end
+      p.expand_path.to_s
+    end
+
     # Load and evaluate a script from a file.
     def eval_script_file(path)
       fail_unexpected_block if block_given?
+      path = expand_path(path)
       eval_script_inline(File.read(path), path)
     end
 
@@ -178,7 +198,9 @@ module ScripTTY
     # Load screens from the specified filenames
     def load_screens(filenames_or_glob)
       fail_unexpected_block if block_given?
+      filenames_or_glob = filenames_or_glob.to_s if filenames_or_glob.is_a?(Pathname)
       if filenames_or_glob.is_a?(String)
+        filenames_or_glob = expand_path(filenames_or_glob)
         filenames = Dir.glob(filenames_or_glob)
       elsif filenames_or_glob.is_a?(Array)
         filenames = filenames_or_glob

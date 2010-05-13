@@ -56,5 +56,14 @@ class ExpectTest < Test::Unit::TestCase
       end
       assert_equal "`screen' method given but does not take a block", exc.message
     end
+
+    def test_basedir
+      e = ScripTTY::Expect.new
+      assert_equal ".", e.basedir, "basedir should default to '.'"
+      e.set_basedir File.dirname(__FILE__) + "/expect"
+      assert_not_equal ".", e.basedir, "basedir should be changed by set_basedir"
+      e.load_screens "screens.txt"
+      assert_not_nil e.screen(:hello_world), "screen should load successfully"
+    end
   end
 end
