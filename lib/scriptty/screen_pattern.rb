@@ -20,9 +20,9 @@ module ScripTTY
   class ScreenPattern
     class <<self
       # Parse a pattern file and return an array of ScreenPattern objects
-      def parse(s)
+      def parse(s, filename=nil, lineno=nil)
         retval = []
-        Parser.parse(s) do |spec|
+        Parser.parse(s, filename, lineno) do |spec|
           retval << new(spec[:name], spec[:properties])
         end
         retval

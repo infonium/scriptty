@@ -59,19 +59,20 @@ module ScripTTY
       RECOGNIZED_PROPERTIES = SINGLE_CHAR_PROPERTIES + TWO_TUPLE_PROPERTIES + %w( rectangle fields text )
 
       class <<self
-        def parse(s, &block)
-          new(s, &block).parse
+        def parse(s, filename=nil, lineno=nil, &block)
+          new(s, filename, lineno, &block).parse
           nil
         end
         protected :new    # Users should not instantiate this object directly
       end
 
-      def initialize(s, &block)
+      def initialize(s, filename=nil, lineno=nil, &block)
         raise ArgumentError.new("no block given") unless block
         @block = block
         @lines = preprocess(s).split("\n").map{|line| "#{line}\n"}
         @line = nil
-        @lineno = 0
+        @filename = filename
+        @lineno = (lineno||1) - 1
         @state = :start
       end
 
@@ -529,7 +530,8 @@ module ScripTTY
 
         def parse_fail(message=nil, line=nil)
           line ||= @lineno
-          raise ArgumentError.new("error:line #{line}: #{message || 'parse error'}")
+          f = @filename ? "#{@filename}:" : "line "
+          raise ArgumentError.new("error:#{f}#{line}: #{message || 'parse error'}")
         end
 
         # Pre-process an input string.

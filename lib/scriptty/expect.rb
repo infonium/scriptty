@@ -204,7 +204,7 @@ module ScripTTY
         raise ArgumentError.new("load_screens takes a string(glob) or an array, not #{filenames.class.name}")
       end
       filenames.each do |filename|
-        ScreenPattern.parse(File.read(filename)).each do |pattern|
+        ScreenPattern.parse(File.read(filename), filename).each do |pattern|
           @screen_patterns[pattern.name.to_sym] = pattern
         end
       end
