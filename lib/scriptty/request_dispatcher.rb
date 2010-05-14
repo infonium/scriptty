@@ -119,7 +119,7 @@ module ScripTTY
           break if finishing?
           begin
             handle_one_request
-          rescue => exc
+          rescue Exception => exc   # Swallow *all* exceptions, so that we get stuff like SyntaxErrors
             # Log & swallow exception
             show_exception(exc)
             close_expect rescue nil   # Ignore errors while closing the connection
@@ -142,7 +142,7 @@ module ScripTTY
         # put the request back on the queue before re-raising the error.
         begin
           execute_hooks(:before_each_request)
-        rescue
+        rescue Exception
           requeue(request)
           raise
         end
@@ -150,7 +150,7 @@ module ScripTTY
         # Execute the request
         begin
           request[:result] = block_eval(request[:block_how], &request[:block])
-        rescue => exc
+        rescue Exception => exc
           show_exception(exc, "in request")
           request[:exception] = exc
           close_expect rescue nil
