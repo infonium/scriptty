@@ -29,12 +29,16 @@ module ScripTTY
   class Expect
 
     # Methods to export to Evaluator
-    EXPORTED_METHODS = Set.new [:basedir, :init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :capture, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_basedir, :set_timeout, :load_screens, :print, :puts, :p, :pp ]
+    EXPORTED_METHODS = Set.new [:basedir, :init_term, :term, :connect, :screen, :expect, :on, :wait, :send, :send_password, :capture, :match, :push_patterns, :pop_patterns, :exit, :eval_script_file, :eval_script_inline, :sleep, :set_basedir, :set_timeout, :load_screens, :matched_screen, :matched_pattern, :print, :puts, :p, :pp ]
 
     attr_reader :term   # The terminal emulation object
 
     attr_reader :capture  # The last non-background captured fields.  For a ScreenPattern match, this is a Hash of fields.  For a String or Regexp match, this is a MatchData object.
     alias match capture   # "match" is the deprecated name for "capture"
+
+    attr_accessor :matched_pattern  # The last non-background pattern that matched (might be a RegExp or a ScreenPattern)
+
+    attr_accessor :matched_screen   # The last non-background ScreenPattern that matched.
 
     attr_accessor :transcript_writer # Set this to an instance of ScripTTY::Util::Transcript::Writer
     attr_accessor :transcript_writer_autoclose # Set this to false to disable closing transcript_writer on exit
@@ -58,6 +62,8 @@ module ScripTTY
       @transcript_writer_autoclose = options[:transcript_writer_autoclose].nil? ? true : options[:transcript_writer_autoclose]
       @screen_patterns = {}
       @basedir = "."
+      @matched_pattern = nil
+      @matched_screen = nil
     end
 
     # Get instance variable from the Evaluator
@@ -431,6 +437,8 @@ module ScripTTY
 
             # Make the next wait() call return
             unless ph.background?
+              @matched_pattern = ph.pattern
+              @matched_screen = ph.pattern if ph.pattern.is_a?(ScreenPattern)
               @capture = m
               @wait_finished = true
               @net.suspend
