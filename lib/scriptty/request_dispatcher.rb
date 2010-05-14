@@ -33,6 +33,9 @@ module ScripTTY
   # RequestDispatcher can be used, for example, to provide an HTTP interface to
   # functions of a screen-scraped terminal.
   class RequestDispatcher
+
+    class RequestCancelled < StandardError; end
+
     def initialize
       # Graceful shutdown flag
       @finishing_lock = Mutex.new
@@ -132,6 +135,12 @@ module ScripTTY
         execute_hooks(:before_finish)
       ensure
         close_expect
+
+        # Clean up any remaining requests.
+        while (request = dequeue)
+          request[:exception] = RequestCancelled.new("main loop exited; request not executed")
+          signal_request_done(request)
+        end
       end
 
       def handle_one_request
@@ -170,7 +179,7 @@ module ScripTTY
             }
           )
         ensure
-          request[:cv_mutex].synchronize { request[:cv].signal }
+          signal_request_done(request)
           raise "RUBY BUG: No success and no exception caught: #{$ERROR_INFO.inspect}" unless success or exception_caught
         end
 
@@ -252,6 +261,10 @@ module ScripTTY
         output = ["Exception #{context || "in #{self}"}: #{exc} (#{exc.class.name})"]
         output += exc.backtrace.map { |line| " #{line}" }
         $stderr.puts output.join("\n")
+      end
+
+      def signal_request_done(request)
+        request[:cv_mutex].synchronize { request[:cv].signal }
       end
 
       # XXX - Workaround for JRuby bug.
