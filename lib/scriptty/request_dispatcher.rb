@@ -117,14 +117,17 @@ module ScripTTY
       def main
         loop do
           break if finishing?
-          begin
-            handle_one_request
-          rescue Exception => exc   # Swallow *all* exceptions, so that we get stuff like SyntaxErrors
-            # Log & swallow exception
-            show_exception(exc)
-            close_expect rescue nil   # Ignore errors while closing the connection
-            sleep 0.5   # Delay just a tiny bit to keep an exception loop from consuming all available resources.
-          end
+          wrap_in_exception_handler(
+            :body => Proc.new {
+              handle_one_request
+            },
+            :rescue => Proc.new { |exc|
+              # Log & swallow exception
+              show_exception(exc)
+              close_expect rescue nil   # Ignore errors while closing the connection
+              sleep 0.5   # Delay just a tiny bit to keep an exception loop from consuming all available resources.
+            }
+          )
         end
         execute_hooks(:before_finish)
       ensure
@@ -140,22 +143,36 @@ module ScripTTY
 
         # Run the before_each_request hooks.  If an exception is raised,
         # put the request back on the queue before re-raising the error.
-        begin
-          execute_hooks(:before_each_request)
-        rescue Exception
-          requeue(request)
-          raise
-        end
+        wrap_in_exception_handler(
+          :body => Proc.new {
+            execute_hooks(:before_each_request)
+          },
+          :rescue => Proc.new { |exc|
+            requeue(request)
+          },
+          :reraise => true
+        )
 
         # Execute the request
+        success = false
+        exception_caught = false
         begin
-          request[:result] = block_eval(request[:block_how], &request[:block])
-        rescue Exception => exc
-          show_exception(exc, "in request")
-          request[:exception] = exc
-          close_expect rescue nil
+          wrap_in_exception_handler(
+            :body => Proc.new {
+              request[:result] = block_eval(request[:block_how], &request[:block])
+              success = true
+            },
+            :rescue => Proc.new { |exc|
+              show_exception(exc, "in request")
+              request[:exception] = exc
+              close_expect rescue nil
+              exception_caught = true
+            }
+          )
+        ensure
+          request[:cv_mutex].synchronize { request[:cv].signal }
+          raise "RUBY BUG: No success and no exception caught: #{$ERROR_INFO.inspect}" unless success or exception_caught
         end
-        request[:cv_mutex].synchronize { request[:cv].signal }
 
         # Execute the after_each_request hooks.
         execute_hooks(:after_each_request)
@@ -235,7 +252,28 @@ module ScripTTY
         output = ["Exception #{context || "in #{self}"}: #{exc} (#{exc.class.name})"]
         output += exc.backtrace.map { |line| " #{line}" }
         $stderr.puts output.join("\n")
-        true    # true means to re-raise the exception
+      end
+
+      # XXX - Workaround for JRuby bug.
+      #
+      # Apparently, if we do this:
+      #
+      #   begin
+      #     # some code here
+      #   rescue Exception => exc
+      #     # handle
+      #   end
+      #
+      # Then other errors like SyntaxError and ArgumentError don't get caught
+      # when we do our block-passing-over-threads magic.  However, if we
+      # enumerate a bunch of exception classes, it seems to work.
+      def wrap_in_exception_handler(options={})
+        begin
+          options[:body].call
+        rescue Exception, ScriptError, SystemStackError, StandardError => exc
+          options[:rescue].call(exc) if options[:rescue]
+          raise if options[:reraise]
+        end
       end
   end
 end
