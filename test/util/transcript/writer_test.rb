@@ -52,6 +52,7 @@ class TranscriptWriterTest < Test::Unit::TestCase
       [88.000] EX+ "line1"
       [88.000] EX+ "line2"
     EOF
+    assert_equal expected, sio.string
   end
 
   def test_string_encoding
