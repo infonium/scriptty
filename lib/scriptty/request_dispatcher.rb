@@ -254,7 +254,7 @@ module ScripTTY
       end
 
       def idle
-        @expect.sleep(0.1)
+        @expect.sleep(0.1, :transcribe=>false)
       end
 
       def show_exception(exc, context=nil)

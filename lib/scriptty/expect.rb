@@ -176,8 +176,10 @@ module ScripTTY
     end
 
     # Sleep for the specified number of seconds
-    def sleep(seconds)
-      @transcript_writer.info("Script executing command", "sleep", seconds.inspect) if @transcript_writer
+    #
+    # Pass :transcribe=>false to this method to suppress output to the transcript.
+    def sleep(seconds, options={})
+      @transcript_writer.info("Script executing command", "sleep", seconds.inspect) if @transcript_writer and options[:transcribe] != false
       sleep_done = false
       @net.timer(seconds) { sleep_done = true ; @net.suspend }
       dispatch until sleep_done

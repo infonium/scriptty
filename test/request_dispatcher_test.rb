@@ -17,6 +17,8 @@
 # along with ScripTTY.  If not, see <http://www.gnu.org/licenses/>.
 require File.dirname(__FILE__) + "/test_helper.rb"
 require 'scriptty/request_dispatcher'
+require 'scriptty/util/transcript/writer'
+require 'stringio'
 
 class RequestDispatcherTest < Test::Unit::TestCase
 
@@ -69,6 +71,18 @@ class RequestDispatcherTest < Test::Unit::TestCase
       assert_raise SyntaxError do
         @r.request { eval("*") }
       end
+    end
+
+    def test_idle_does_not_write_to_transcript
+      sio = StringIO.new
+      @r.after_init {
+        self.transcript_writer = ScripTTY::Util::Transcript::Writer.new(sio)
+        self.transcript_writer.override_timestamp = 88.0
+      }
+      @r.start
+      sleep 0.5
+      @r.finish
+      assert_equal sio.string, %Q([88.000] * "Script executing command" "exit"\n)
     end
 
   end
